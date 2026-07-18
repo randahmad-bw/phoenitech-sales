@@ -66,7 +66,7 @@ class ContractService
         }
 
         $perPage = $filters['per_page'] ?? 15;
-        return $query->orderBy('id', 'desc')->paginate($perPage);
+        return $query->orderBy('start_date', 'desc')->orderBy('id', 'desc')->paginate($perPage);
     }
 
     /**
