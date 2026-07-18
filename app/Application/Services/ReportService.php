@@ -9,6 +9,7 @@ use App\Helpers\CurrencyHelper;
 
 /**
  * Generates monthly and yearly reports with comparisons. All currency aggregates are converted to USD base.
+ * Falls back to created_at year/month for contracts without a start_date.
  */
 class ReportService
 {
@@ -51,10 +52,15 @@ class ReportService
         }
 
         // Calculate best employee using USD converted totals
-        $contractsForYear = Contract::whereYear('start_date', $year)
-            ->whereNotNull('employee_id')
-            ->with('employee:id,name')
-            ->get();
+        $contractsForYear = Contract::where(function ($q) use ($year) {
+            $q->whereYear('start_date', $year)
+              ->orWhere(function ($sq) use ($year) {
+                  $sq->whereNull('start_date')->whereYear('created_at', $year);
+              });
+        })
+        ->whereNotNull('employee_id')
+        ->with('employee:id,name')
+        ->get();
 
         $employeeTotals = [];
         foreach ($contractsForYear as $contract) {
@@ -93,7 +99,13 @@ class ReportService
     {
         $newCompanies = Company::whereYear('created_at', $year)->whereMonth('created_at', $month)->count();
         
-        $contracts = Contract::whereYear('start_date', $year)->whereMonth('start_date', $month)->get();
+        $contracts = Contract::where(function ($q) use ($year, $month) {
+            $q->whereYear('start_date', $year)->whereMonth('start_date', $month)
+              ->orWhere(function ($sq) use ($year, $month) {
+                  $sq->whereNull('start_date')->whereYear('created_at', $year)->whereMonth('created_at', $month);
+              });
+        })->get();
+
         $totalValue = $contracts->sum(fn($c) => CurrencyHelper::toUsd((float)$c->contract_value, $c->currency));
         $newContracts = $contracts->count();
         

@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Aggregates dashboard statistics and chart data. All aggregates are converted to USD base.
+ * Falls back to created_at year/month for contracts without a start_date.
  */
 class DashboardService
 {
@@ -39,7 +40,13 @@ class DashboardService
      */
     private function getOverviewStats(int $year): array
     {
-        $contracts = Contract::whereYear('start_date', $year)->get();
+        $contracts = Contract::where(function ($q) use ($year) {
+            $q->whereYear('start_date', $year)
+              ->orWhere(function ($sq) use ($year) {
+                  $sq->whereNull('start_date')->whereYear('created_at', $year);
+              });
+        })->get();
+
         $totalValue = $contracts->sum(fn($c) => CurrencyHelper::toUsd((float)$c->contract_value, $c->currency));
         
         $payments = Payment::where('status', 'paid')
@@ -50,7 +57,13 @@ class DashboardService
         
         $thisMonth = now()->month;
 
-        $contractsThisMonth = Contract::whereMonth('start_date', $thisMonth)->whereYear('start_date', $year)->get();
+        $contractsThisMonth = Contract::where(function ($q) use ($thisMonth, $year) {
+            $q->whereMonth('start_date', $thisMonth)->whereYear('start_date', $year)
+              ->orWhere(function ($sq) use ($thisMonth, $year) {
+                  $sq->whereNull('start_date')->whereMonth('created_at', $thisMonth)->whereYear('created_at', $year);
+              });
+        })->get();
+        
         $salesThisMonth = $contractsThisMonth->sum(fn($c) => CurrencyHelper::toUsd((float)$c->contract_value, $c->currency));
 
         $paymentsThisMonth = Payment::where('status', 'paid')
@@ -87,11 +100,16 @@ class DashboardService
      */
     private function getMonthlySalesChart(int $year): array
     {
-        $contracts = Contract::whereYear('start_date', $year)->get();
+        $contracts = Contract::where(function ($q) use ($year) {
+            $q->whereYear('start_date', $year)
+              ->orWhere(function ($sq) use ($year) {
+                  $sq->whereNull('start_date')->whereYear('created_at', $year);
+              });
+        })->get();
         
         $data = [];
         foreach ($contracts as $contract) {
-            $month = $contract->start_date?->month;
+            $month = $contract->start_date?->month ?? $contract->created_at?->month;
             if ($month) {
                 if (!isset($data[$month])) {
                     $data[$month] = 0.0;
@@ -143,10 +161,15 @@ class DashboardService
      */
     private function getTopEmployeesChart(int $year): array
     {
-        $contracts = Contract::whereYear('start_date', $year)
-            ->whereNotNull('employee_id')
-            ->with('employee:id,name')
-            ->get();
+        $contracts = Contract::where(function ($q) use ($year) {
+            $q->whereYear('start_date', $year)
+              ->orWhere(function ($sq) use ($year) {
+                  $sq->whereNull('start_date')->whereYear('created_at', $year);
+              });
+        })
+        ->whereNotNull('employee_id')
+        ->with('employee:id,name')
+        ->get();
 
         $grouped = [];
         foreach ($contracts as $contract) {
@@ -171,10 +194,15 @@ class DashboardService
      */
     private function getTopServicesChart(int $year): array
     {
-        $contracts = Contract::whereYear('start_date', $year)
-            ->whereNotNull('service_id')
-            ->with('service:id,name_ar,name_en')
-            ->get();
+        $contracts = Contract::where(function ($q) use ($year) {
+            $q->whereYear('start_date', $year)
+              ->orWhere(function ($sq) use ($year) {
+                  $sq->whereNull('start_date')->whereYear('created_at', $year);
+              });
+        })
+        ->whereNotNull('service_id')
+        ->with('service:id,name_ar,name_en')
+        ->get();
 
         $grouped = [];
         foreach ($contracts as $contract) {
@@ -231,9 +259,12 @@ class DashboardService
         foreach ($employees as $employee) {
             // ── This month ────────────────────────────
             $contractsThisMonth = Contract::where('employee_id', $employee->id)
-                ->whereMonth('start_date', $thisMonth)
-                ->whereYear('start_date', $thisYear)
-                ->get();
+                ->where(function ($q) use ($thisMonth, $thisYear) {
+                    $q->whereMonth('start_date', $thisMonth)->whereYear('start_date', $thisYear)
+                      ->orWhere(function ($sq) use ($thisMonth, $thisYear) {
+                          $sq->whereNull('start_date')->whereMonth('created_at', $thisMonth)->whereYear('created_at', $thisYear);
+                      });
+                })->get();
             $salesThisMonth = $contractsThisMonth->sum(fn($c) => CurrencyHelper::toUsd((float)$c->contract_value, $c->currency));
 
             $paymentsThisMonth = Payment::where('status', 'paid')
@@ -246,9 +277,12 @@ class DashboardService
 
             // ── Previous month ─────────────────────────
             $contractsPrevMonth = Contract::where('employee_id', $employee->id)
-                ->whereMonth('start_date', $prevMonth)
-                ->whereYear('start_date', $prevYear)
-                ->get();
+                ->where(function ($q) use ($prevMonth, $prevYear) {
+                    $q->whereMonth('start_date', $prevMonth)->whereYear('start_date', $prevYear)
+                      ->orWhere(function ($sq) use ($prevMonth, $prevYear) {
+                          $sq->whereNull('start_date')->whereMonth('created_at', $prevMonth)->whereYear('created_at', $prevYear);
+                      });
+                })->get();
             $salesPrevMonth = $contractsPrevMonth->sum(fn($c) => CurrencyHelper::toUsd((float)$c->contract_value, $c->currency));
 
             $paymentsPrevMonth = Payment::where('status', 'paid')
@@ -261,8 +295,12 @@ class DashboardService
 
             // ── Totals ─────────────────────────────────
             $contractsTotal = Contract::where('employee_id', $employee->id)
-                ->whereYear('start_date', $year)
-                ->get();
+                ->where(function ($q) use ($year) {
+                    $q->whereYear('start_date', $year)
+                      ->orWhere(function ($sq) use ($year) {
+                          $sq->whereNull('start_date')->whereYear('created_at', $year);
+                      });
+                })->get();
             $totalSales = $contractsTotal->sum(fn($c) => CurrencyHelper::toUsd((float)$c->contract_value, $c->currency));
 
             $paymentsTotal = Payment::where('status', 'paid')
