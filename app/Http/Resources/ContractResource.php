@@ -25,6 +25,7 @@ class ContractResource extends JsonResource
             'service' => new ServiceResource($this->whenLoaded('service')),
             'contract_value' => (float) $this->contract_value,
             'currency' => $this->currency,
+            'exchange_rate' => $this->exchange_rate ? (float) $this->exchange_rate : null,
             'start_date' => $this->start_date?->format('Y-m-d'),
             'end_date' => $this->end_date?->format('Y-m-d'),
             'status' => $this->status,

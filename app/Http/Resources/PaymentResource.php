@@ -19,6 +19,7 @@ class PaymentResource extends JsonResource
             'id' => $this->id,
             'contract_id' => $this->contract_id,
             'amount' => (float) $this->amount,
+            'exchange_rate' => $this->exchange_rate ? (float) $this->exchange_rate : null,
             'payment_date' => $this->payment_date?->format('Y-m-d'),
             'method' => $this->method,
             'status' => $this->status,
