@@ -5,9 +5,10 @@ namespace App\Application\Services;
 use App\Models\Company;
 use App\Models\Contract;
 use App\Models\Payment;
+use App\Helpers\CurrencyHelper;
 
 /**
- * Generates monthly and yearly reports with comparisons.
+ * Generates monthly and yearly reports with comparisons. All currency aggregates are converted to USD base.
  */
 class ReportService
 {
@@ -49,13 +50,24 @@ class ReportService
             }
         }
 
-        $bestEmployee = Contract::selectRaw('employee_id, SUM(contract_value) as total')
-            ->with('employee:id,name')
-            ->whereYear('start_date', $year)
+        // Calculate best employee using USD converted totals
+        $contractsForYear = Contract::whereYear('start_date', $year)
             ->whereNotNull('employee_id')
-            ->groupBy('employee_id')
-            ->orderByDesc('total')
-            ->first();
+            ->with('employee:id,name')
+            ->get();
+
+        $employeeTotals = [];
+        foreach ($contractsForYear as $contract) {
+            $empId = $contract->employee_id;
+            $empName = $contract->employee?->name ?? 'Unknown';
+            if (!isset($employeeTotals[$empId])) {
+                $employeeTotals[$empId] = ['name' => $empName, 'total' => 0.0];
+            }
+            $employeeTotals[$empId]['total'] += CurrencyHelper::toUsd((float)$contract->contract_value, $contract->currency);
+        }
+
+        usort($employeeTotals, fn($a, $b) => $b['total'] <=> $a['total']);
+        $bestEmployee = !empty($employeeTotals) ? $employeeTotals[0] : null;
 
         $topService = Contract::selectRaw('service_id, COUNT(*) as count')
             ->with('service:id,name_en,name_ar')
@@ -69,7 +81,7 @@ class ReportService
             'year' => $year,
             'monthly_breakdown' => $monthlyBreakdown,
             'best_month' => $bestMonth,
-            'best_employee' => $bestEmployee ? ['name' => $bestEmployee->employee?->name, 'total' => round($bestEmployee->total, 2)] : null,
+            'best_employee' => $bestEmployee ? ['name' => $bestEmployee['name'], 'total' => round($bestEmployee['total'], 2)] : null,
             'top_service' => $topService ? ['name_en' => $topService->service?->name_en, 'name_ar' => $topService->service?->name_ar, 'count' => $topService->count] : null,
         ];
     }
@@ -80,10 +92,17 @@ class ReportService
     private function getMonthStats(int $year, int $month): array
     {
         $newCompanies = Company::whereYear('created_at', $year)->whereMonth('created_at', $month)->count();
-        $contracts = Contract::whereYear('start_date', $year)->whereMonth('start_date', $month);
-        $totalValue = (clone $contracts)->sum('contract_value');
-        $newContracts = (clone $contracts)->count();
-        $collected = Payment::where('status', 'paid')->whereYear('payment_date', $year)->whereMonth('payment_date', $month)->sum('amount');
+        
+        $contracts = Contract::whereYear('start_date', $year)->whereMonth('start_date', $month)->get();
+        $totalValue = $contracts->sum(fn($c) => CurrencyHelper::toUsd((float)$c->contract_value, $c->currency));
+        $newContracts = $contracts->count();
+        
+        $payments = Payment::where('status', 'paid')
+            ->whereYear('payment_date', $year)
+            ->whereMonth('payment_date', $month)
+            ->with('contract')
+            ->get();
+        $collected = $payments->sum(fn($p) => CurrencyHelper::toUsd((float)$p->amount, $p->contract?->currency));
 
         return [
             'month' => $month, 'year' => $year,

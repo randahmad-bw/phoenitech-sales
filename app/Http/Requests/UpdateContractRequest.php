@@ -22,6 +22,7 @@ class UpdateContractRequest extends BaseFormRequest
             'status'              => ['nullable', 'in:draft,signed,active,completed,cancelled,suspended,renewed'],
             'progress_percentage' => ['nullable', 'integer', 'min:0', 'max:100'],
             'notes'               => ['nullable', 'string'],
+            'exchange_rate'       => ['nullable', 'numeric', 'min:0.0001'],
         ];
     }
 }

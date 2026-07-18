@@ -23,6 +23,7 @@ class Contract extends Model
         'service_id',
         'contract_value',
         'currency',
+        'exchange_rate',
         'start_date',
         'end_date',
         'status',
@@ -37,6 +38,7 @@ class Contract extends Model
     {
         return [
             'contract_value' => 'decimal:2',
+            'exchange_rate' => 'float',
             'start_date' => 'date',
             'end_date' => 'date',
             'progress_percentage' => 'integer',

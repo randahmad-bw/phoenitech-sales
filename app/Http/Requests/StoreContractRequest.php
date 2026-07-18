@@ -23,6 +23,7 @@ class StoreContractRequest extends BaseFormRequest
             'progress_percentage' => ['nullable', 'integer', 'min:0', 'max:100'],
             'notes'               => ['nullable', 'string'],
             'initial_payment'     => ['nullable', 'numeric', 'min:0'],
+            'exchange_rate'       => ['nullable', 'numeric', 'min:0.0001'],
         ];
     }
 }

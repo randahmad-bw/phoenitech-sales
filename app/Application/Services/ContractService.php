@@ -96,6 +96,7 @@ class ContractService
             Payment::create([
                 'contract_id'  => $contract->id,
                 'amount'       => (float) $initialPayment,
+                'exchange_rate'=> $contract->exchange_rate ?? 1.0,
                 'payment_date' => $contract->start_date ?? now()->toDateString(),
                 'method'       => 'cash',
                 'status'       => 'paid',
@@ -221,6 +222,7 @@ class ContractService
         $newContract->start_date = $data['start_date'];
         $newContract->end_date = $data['end_date'];
         $newContract->contract_value = $data['contract_value'];
+        $newContract->exchange_rate = $data['exchange_rate'] ?? $oldContract->exchange_rate ?? 1.0;
         $newContract->notes = $data['notes'] ?? null;
         $newContract->status = 'active';
         $newContract->progress_percentage = 0;
@@ -231,6 +233,7 @@ class ContractService
             \App\Models\Payment::create([
                 'contract_id'  => $newContract->id,
                 'amount'       => (float) $data['initial_payment'],
+                'exchange_rate'=> $newContract->exchange_rate ?? 1.0,
                 'payment_date' => $newContract->start_date ?? now()->toDateString(),
                 'method'       => 'cash',
                 'status'       => 'paid',

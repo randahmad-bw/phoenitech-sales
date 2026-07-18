@@ -15,6 +15,7 @@ class StorePaymentRequest extends BaseFormRequest
             'method' => ['nullable', 'in:cash,bank_transfer,check,other'],
             'status' => ['nullable', 'in:paid,pending'],
             'notes' => ['nullable', 'string'],
+            'exchange_rate' => ['nullable', 'numeric', 'min:0.0001'],
         ];
     }
 }

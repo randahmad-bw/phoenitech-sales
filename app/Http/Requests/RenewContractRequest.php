@@ -15,6 +15,7 @@ class RenewContractRequest extends BaseFormRequest
             'end_date'        => ['required', 'date', 'after_or_equal:start_date'],
             'initial_payment' => ['nullable', 'numeric', 'min:0'],
             'notes'           => ['nullable', 'string'],
+            'exchange_rate'   => ['nullable', 'numeric', 'min:0.0001'],
         ];
     }
 }

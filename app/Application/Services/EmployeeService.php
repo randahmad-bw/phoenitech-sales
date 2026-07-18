@@ -3,6 +3,7 @@
 namespace App\Application\Services;
 
 use App\Models\Employee;
+use App\Helpers\CurrencyHelper;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -86,12 +87,8 @@ class EmployeeService
         $employee = Employee::findOrFail($id);
 
         $contracts = $employee->contracts;
-        $totalValue = $contracts->sum('contract_value');
-        $totalPaid = 0;
-
-        foreach ($contracts as $contract) {
-            $totalPaid += $contract->total_paid;
-        }
+        $totalValue = $contracts->sum(fn($c) => CurrencyHelper::toUsd((float)$c->contract_value, $c->currency));
+        $totalPaid = $contracts->sum(fn($c) => CurrencyHelper::toUsd((float)$c->total_paid, $c->currency));
 
         return [
             'total_companies' => $employee->companies()->count(),

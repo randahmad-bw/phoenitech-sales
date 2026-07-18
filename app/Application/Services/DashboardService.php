@@ -5,10 +5,11 @@ namespace App\Application\Services;
 use App\Models\Company;
 use App\Models\Contract;
 use App\Models\Payment;
+use App\Helpers\CurrencyHelper;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Aggregates dashboard statistics and chart data.
+ * Aggregates dashboard statistics and chart data. All aggregates are converted to USD base.
  */
 class DashboardService
 {
@@ -39,9 +40,25 @@ class DashboardService
     private function getOverviewStats(int $year): array
     {
         $contracts = Contract::whereYear('start_date', $year)->get();
-        $totalValue = $contracts->sum('contract_value');
-        $totalPaid = Payment::where('status', 'paid')->whereYear('payment_date', $year)->sum('amount');
+        $totalValue = $contracts->sum(fn($c) => CurrencyHelper::toUsd((float)$c->contract_value, $c->currency));
+        
+        $payments = Payment::where('status', 'paid')
+            ->whereYear('payment_date', $year)
+            ->with('contract')
+            ->get();
+        $totalPaid = $payments->sum(fn($p) => CurrencyHelper::toUsd((float)$p->amount, $p->contract?->currency));
+        
         $thisMonth = now()->month;
+
+        $contractsThisMonth = Contract::whereMonth('start_date', $thisMonth)->whereYear('start_date', $year)->get();
+        $salesThisMonth = $contractsThisMonth->sum(fn($c) => CurrencyHelper::toUsd((float)$c->contract_value, $c->currency));
+
+        $paymentsThisMonth = Payment::where('status', 'paid')
+            ->whereMonth('payment_date', $thisMonth)
+            ->whereYear('payment_date', $year)
+            ->with('contract')
+            ->get();
+        $collectedThisMonth = $paymentsThisMonth->sum(fn($p) => CurrencyHelper::toUsd((float)$p->amount, $p->contract?->currency));
 
         return [
             'total_companies' => Company::whereYear('created_at', '<=', $year)->count(),
@@ -56,12 +73,12 @@ class DashboardService
             'total_remaining' => round($totalValue - $totalPaid, 2),
             'collection_percentage' => $totalValue > 0 ? round(($totalPaid / $totalValue) * 100, 2) : 0,
             'avg_contract_value' => $contracts->count() > 0 ? round($totalValue / $contracts->count(), 2) : 0,
-            'largest_contract' => round($contracts->max('contract_value') ?? 0, 2),
-            'new_contracts_this_month' => Contract::whereMonth('start_date', $thisMonth)->whereYear('start_date', $year)->count(),
+            'largest_contract' => round($contracts->map(fn($c) => CurrencyHelper::toUsd((float)$c->contract_value, $c->currency))->max() ?? 0, 2),
+            'new_contracts_this_month' => $contractsThisMonth->count(),
             'new_companies_this_month' => Company::whereMonth('created_at', $thisMonth)->whereYear('created_at', $year)->count(),
-            'sales_this_month'         => round(Contract::whereMonth('start_date', $thisMonth)->whereYear('start_date', $year)->sum('contract_value'), 2),
+            'sales_this_month'         => round($salesThisMonth, 2),
             'total_sales'              => round($totalValue, 2),
-            'collected_this_month'     => round(Payment::where('status', 'paid')->whereMonth('payment_date', $thisMonth)->whereYear('payment_date', $year)->sum('amount'), 2),
+            'collected_this_month'     => round($collectedThisMonth, 2),
         ];
     }
 
@@ -70,14 +87,18 @@ class DashboardService
      */
     private function getMonthlySalesChart(int $year): array
     {
-        $isSqlite = DB::connection()->getDriverName() === 'sqlite';
-        $monthExpr = $isSqlite ? "CAST(strftime('%m', start_date) AS INTEGER)" : "MONTH(start_date)";
-
-        $data = Contract::selectRaw("{$monthExpr} as month, SUM(contract_value) as total")
-            ->whereYear('start_date', $year)
-            ->groupByRaw($monthExpr)
-            ->pluck('total', 'month')
-            ->toArray();
+        $contracts = Contract::whereYear('start_date', $year)->get();
+        
+        $data = [];
+        foreach ($contracts as $contract) {
+            $month = $contract->start_date?->month;
+            if ($month) {
+                if (!isset($data[$month])) {
+                    $data[$month] = 0.0;
+                }
+                $data[$month] += CurrencyHelper::toUsd((float)$contract->contract_value, $contract->currency);
+            }
+        }
 
         return $this->fillMonthlyData($data);
     }
@@ -87,15 +108,21 @@ class DashboardService
      */
     private function getMonthlyCollectionsChart(int $year): array
     {
-        $isSqlite = DB::connection()->getDriverName() === 'sqlite';
-        $monthExpr = $isSqlite ? "CAST(strftime('%m', payment_date) AS INTEGER)" : "MONTH(payment_date)";
-
-        $data = Payment::selectRaw("{$monthExpr} as month, SUM(amount) as total")
-            ->where('status', 'paid')
+        $payments = Payment::where('status', 'paid')
             ->whereYear('payment_date', $year)
-            ->groupByRaw($monthExpr)
-            ->pluck('total', 'month')
-            ->toArray();
+            ->with('contract')
+            ->get();
+
+        $data = [];
+        foreach ($payments as $payment) {
+            $month = $payment->payment_date?->month;
+            if ($month) {
+                if (!isset($data[$month])) {
+                    $data[$month] = 0.0;
+                }
+                $data[$month] += CurrencyHelper::toUsd((float)$payment->amount, $payment->contract?->currency);
+            }
+        }
 
         return $this->fillMonthlyData($data);
     }
@@ -116,19 +143,27 @@ class DashboardService
      */
     private function getTopEmployeesChart(int $year): array
     {
-        return Contract::selectRaw('employee_id, SUM(contract_value) as total')
-            ->with('employee:id,name')
-            ->whereYear('start_date', $year)
+        $contracts = Contract::whereYear('start_date', $year)
             ->whereNotNull('employee_id')
-            ->groupBy('employee_id')
-            ->orderByDesc('total')
-            ->limit(5)
-            ->get()
-            ->map(fn ($item) => [
-                'name' => $item->employee?->name ?? 'Unknown',
-                'total' => round($item->total, 2),
-            ])
-            ->toArray();
+            ->with('employee:id,name')
+            ->get();
+
+        $grouped = [];
+        foreach ($contracts as $contract) {
+            $empId = $contract->employee_id;
+            $empName = $contract->employee?->name ?? 'Unknown';
+            if (!isset($grouped[$empId])) {
+                $grouped[$empId] = ['name' => $empName, 'total' => 0.0];
+            }
+            $grouped[$empId]['total'] += CurrencyHelper::toUsd((float)$contract->contract_value, $contract->currency);
+        }
+
+        usort($grouped, fn($a, $b) => $b['total'] <=> $a['total']);
+
+        return array_slice(array_map(fn($item) => [
+            'name' => $item['name'],
+            'total' => round($item['total'], 2),
+        ], $grouped), 0, 5);
     }
 
     /**
@@ -136,21 +171,31 @@ class DashboardService
      */
     private function getTopServicesChart(int $year): array
     {
-        return Contract::selectRaw('service_id, SUM(contract_value) as total, COUNT(*) as count')
-            ->with('service:id,name_ar,name_en')
-            ->whereYear('start_date', $year)
+        $contracts = Contract::whereYear('start_date', $year)
             ->whereNotNull('service_id')
-            ->groupBy('service_id')
-            ->orderByDesc('total')
-            ->limit(5)
-            ->get()
-            ->map(fn ($item) => [
-                'name_ar' => $item->service?->name_ar ?? 'غير معروف',
-                'name_en' => $item->service?->name_en ?? 'Unknown',
-                'count' => $item->count,
-                'total' => round($item->total, 2),
-            ])
-            ->toArray();
+            ->with('service:id,name_ar,name_en')
+            ->get();
+
+        $grouped = [];
+        foreach ($contracts as $contract) {
+            $srvId = $contract->service_id;
+            $srvAr = $contract->service?->name_ar ?? 'غير معروف';
+            $srvEn = $contract->service?->name_en ?? 'Unknown';
+            if (!isset($grouped[$srvId])) {
+                $grouped[$srvId] = ['name_ar' => $srvAr, 'name_en' => $srvEn, 'count' => 0, 'total' => 0.0];
+            }
+            $grouped[$srvId]['count']++;
+            $grouped[$srvId]['total'] += CurrencyHelper::toUsd((float)$contract->contract_value, $contract->currency);
+        }
+
+        usort($grouped, fn($a, $b) => $b['total'] <=> $a['total']);
+
+        return array_slice(array_map(fn($item) => [
+            'name_ar' => $item['name_ar'],
+            'name_en' => $item['name_en'],
+            'count' => $item['count'],
+            'total' => round($item['total'], 2),
+        ], $grouped), 0, 5);
     }
 
     /**
@@ -188,62 +233,57 @@ class DashboardService
             $contractsThisMonth = Contract::where('employee_id', $employee->id)
                 ->whereMonth('start_date', $thisMonth)
                 ->whereYear('start_date', $thisYear)
-                ->count();
+                ->get();
+            $salesThisMonth = $contractsThisMonth->sum(fn($c) => CurrencyHelper::toUsd((float)$c->contract_value, $c->currency));
 
-            $salesThisMonth = Contract::where('employee_id', $employee->id)
-                ->whereMonth('start_date', $thisMonth)
-                ->whereYear('start_date', $thisYear)
-                ->sum('contract_value');
-
-            $collectedThisMonth = Payment::where('status', 'paid')
+            $paymentsThisMonth = Payment::where('status', 'paid')
                 ->whereMonth('payment_date', $thisMonth)
                 ->whereYear('payment_date', $thisYear)
                 ->whereHas('contract', fn ($q) => $q->where('employee_id', $employee->id))
-                ->sum('amount');
+                ->with('contract')
+                ->get();
+            $collectedThisMonth = $paymentsThisMonth->sum(fn($p) => CurrencyHelper::toUsd((float)$p->amount, $p->contract?->currency));
 
             // ── Previous month ─────────────────────────
             $contractsPrevMonth = Contract::where('employee_id', $employee->id)
                 ->whereMonth('start_date', $prevMonth)
                 ->whereYear('start_date', $prevYear)
-                ->count();
+                ->get();
+            $salesPrevMonth = $contractsPrevMonth->sum(fn($c) => CurrencyHelper::toUsd((float)$c->contract_value, $c->currency));
 
-            $salesPrevMonth = Contract::where('employee_id', $employee->id)
-                ->whereMonth('start_date', $prevMonth)
-                ->whereYear('start_date', $prevYear)
-                ->sum('contract_value');
-
-            $collectedPrevMonth = Payment::where('status', 'paid')
+            $paymentsPrevMonth = Payment::where('status', 'paid')
                 ->whereMonth('payment_date', $prevMonth)
                 ->whereYear('payment_date', $prevYear)
                 ->whereHas('contract', fn ($q) => $q->where('employee_id', $employee->id))
-                ->sum('amount');
+                ->with('contract')
+                ->get();
+            $collectedPrevMonth = $paymentsPrevMonth->sum(fn($p) => CurrencyHelper::toUsd((float)$p->amount, $p->contract?->currency));
 
             // ── Totals ─────────────────────────────────
-            $totalContracts = Contract::where('employee_id', $employee->id)
+            $contractsTotal = Contract::where('employee_id', $employee->id)
                 ->whereYear('start_date', $year)
-                ->count();
+                ->get();
+            $totalSales = $contractsTotal->sum(fn($c) => CurrencyHelper::toUsd((float)$c->contract_value, $c->currency));
 
-            $totalSales = Contract::where('employee_id', $employee->id)
-                ->whereYear('start_date', $year)
-                ->sum('contract_value');
-
-            $totalCollected = Payment::where('status', 'paid')
+            $paymentsTotal = Payment::where('status', 'paid')
                 ->whereYear('payment_date', $year)
                 ->whereHas('contract', fn ($q) => $q->where('employee_id', $employee->id))
-                ->sum('amount');
+                ->with('contract')
+                ->get();
+            $totalCollected = $paymentsTotal->sum(fn($p) => CurrencyHelper::toUsd((float)$p->amount, $p->contract?->currency));
 
             $data[] = [
                 'name'                  => $employee->name,
                 // This month
-                'contracts_this_month'  => $contractsThisMonth,
+                'contracts_this_month'  => $contractsThisMonth->count(),
                 'sales_this_month'      => round($salesThisMonth, 2),
                 'collected_this_month'  => round($collectedThisMonth, 2),
                 // Previous month
-                'contracts_prev_month'  => $contractsPrevMonth,
+                'contracts_prev_month'  => $contractsPrevMonth->count(),
                 'sales_prev_month'      => round($salesPrevMonth, 2),
                 'collected_prev_month'  => round($collectedPrevMonth, 2),
                 // Totals
-                'total_contracts'       => $totalContracts,
+                'total_contracts'       => $contractsTotal->count(),
                 'total_sales'           => round($totalSales, 2),
                 'total_collected'       => round($totalCollected, 2),
             ];

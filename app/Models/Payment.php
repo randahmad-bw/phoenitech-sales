@@ -15,6 +15,7 @@ class Payment extends Model
     protected $fillable = [
         'contract_id',
         'amount',
+        'exchange_rate',
         'payment_date',
         'method',
         'status',
@@ -28,6 +29,7 @@ class Payment extends Model
     {
         return [
             'amount' => 'decimal:2',
+            'exchange_rate' => 'float',
             'payment_date' => 'date',
         ];
     }
