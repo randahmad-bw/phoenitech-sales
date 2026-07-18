@@ -3,7 +3,9 @@
 namespace Database\Seeders;
 
 use App\Models\Employee;
+use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 /**
  * Seeds sample employee records for development and testing.
@@ -37,9 +39,23 @@ class EmployeeSeeder extends Seeder
         ];
 
         foreach ($employees as $data) {
+            $user = User::updateOrCreate(
+                ['email' => $data['email']],
+                [
+                    'name' => $data['name'],
+                    'password' => Hash::make('password'),
+                ]
+            );
+
             Employee::updateOrCreate(
                 ['email' => $data['email']],
-                $data
+                [
+                    'user_id' => $user->id,
+                    'name' => $data['name'],
+                    'phone' => $data['phone'],
+                    'email' => $data['email'],
+                    'employment_date' => $data['employment_date'],
+                ]
             );
         }
     }

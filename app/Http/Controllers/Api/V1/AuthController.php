@@ -27,6 +27,7 @@ class AuthController extends Controller
         }
 
         $user = Auth::user();
+        $user->load('employee');
         $token = $user->createToken('api-token')->plainTextToken;
 
         return ApiResponse::success([
@@ -53,8 +54,11 @@ class AuthController extends Controller
      */
     public function me(Request $request): JsonResponse
     {
+        $user = $request->user();
+        $user->load('employee');
+        
         return ApiResponse::success(
-            new UserResource($request->user()),
+            new UserResource($user),
             'User retrieved.'
         );
     }

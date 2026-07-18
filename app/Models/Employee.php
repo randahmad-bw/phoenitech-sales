@@ -54,4 +54,12 @@ class Employee extends Model
     {
         return $this->hasMany(Contract::class);
     }
+
+    /**
+     * Weekly reports submitted by this employee.
+     */
+    public function weeklyReports(): HasMany
+    {
+        return $this->hasMany(WeeklyReport::class);
+    }
 }

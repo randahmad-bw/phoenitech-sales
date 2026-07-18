@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\SearchController;
 use App\Http\Controllers\Api\V1\ServiceController;
+use App\Http\Controllers\Api\V1\WeeklyReportController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -71,6 +72,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Reports
     Route::get('reports/monthly', [ReportController::class, 'monthly'])->name('reports.monthly');
     Route::get('reports/yearly', [ReportController::class, 'yearly'])->name('reports.yearly');
+    Route::apiResource('weekly-reports', WeeklyReportController::class)->except(['update']);
 
     // Export
     Route::get('export/contracts', [\App\Http\Controllers\Api\V1\ExportController::class, 'contracts'])->name('export.contracts');
