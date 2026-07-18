@@ -49,6 +49,10 @@ class ContractService
             $query->where('status', $filters['status']);
         }
 
+        if (isset($filters['uncollected']) && $filters['uncollected'] === 'true') {
+            $query->whereRaw('contract_value > (select COALESCE(sum(amount), 0) from payments where payments.contract_id = contracts.id and payments.status = "paid")');
+        }
+
         if (!empty($filters['date_from'])) {
             $query->whereDate('start_date', '>=', $filters['date_from']);
         }
