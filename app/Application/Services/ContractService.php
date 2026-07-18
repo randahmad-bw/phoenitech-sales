@@ -66,8 +66,7 @@ class ContractService
         }
 
         $perPage = $filters['per_page'] ?? 15;
-
-        return $query->latest()->paginate($perPage);
+        return $query->orderBy('id', 'desc')->paginate($perPage);
     }
 
     /**
@@ -162,17 +161,9 @@ class ContractService
         return $data;
     }
 
-    /**
-     * Delete a contract. Blocks deletion if status is active or signed.
-     */
     public function delete(int $id): bool
     {
         $contract = Contract::findOrFail($id);
-        
-        if (in_array($contract->status, ['active', 'signed'])) {
-            return false;
-        }
-
         return $contract->delete();
     }
 
