@@ -19,12 +19,12 @@ class CurrencyHelper
             return $amount;
         }
 
-        $rates = [
-            'USD' => (float) env('CURRENCY_RATE_USD', 1.0),
-            'SAR' => (float) env('CURRENCY_RATE_SAR', 3.75),
-            'AED' => (float) env('CURRENCY_RATE_AED', 3.67),
-            'SYP' => (float) env('CURRENCY_RATE_SYP', 15000.0),
-        ];
+        $rates = config('services.currency.rates', [
+            'USD' => 1.0,
+            'SAR' => 3.75,
+            'AED' => 3.67,
+            'SYP' => 15000.0,
+        ]);
 
         $fromRate = $rates[$from] ?? 1.0;
         $toRate = $rates[$to] ?? 1.0;

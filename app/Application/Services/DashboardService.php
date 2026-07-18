@@ -43,21 +43,38 @@ class DashboardService
         if ($contract->currency === 'USD') {
             return $amount;
         }
-        $rate = $contract->exchange_rate ?: 1.0;
-        return $amount / $rate;
+        $rate = $contract->exchange_rate;
+        if ($rate && (float)$rate > 0 && (float)$rate !== 1.0) {
+            return $amount / (float)$rate;
+        }
+        return CurrencyHelper::toUsd($amount, $contract->currency);
     }
 
     /**
      * Convert payment amount to USD using payment or contract stored exchange rate.
      */
-    private function paymentToUsd(Payment $payment, float $amount): float
+    private function paymentToUsd(Payment $payment, float $amount, ?Contract $contract = null): float
     {
-        $currency = $payment->contract?->currency ?? 'USD';
+        $contract = $contract ?? $payment->contract;
+        $currency = $contract?->currency ?? 'USD';
+        
         if ($currency === 'USD') {
             return $amount;
         }
-        $rate = $payment->exchange_rate ?: $payment->contract?->exchange_rate ?: 1.0;
-        return $amount / $rate;
+        
+        $payRate = $payment->exchange_rate;
+        if ($payRate && (float)$payRate > 0 && (float)$payRate !== 1.0) {
+            return $amount / (float)$payRate;
+        }
+        
+        if ($contract) {
+            $conRate = $contract->exchange_rate;
+            if ($conRate && (float)$conRate > 0 && (float)$conRate !== 1.0) {
+                return $amount / (float)$conRate;
+            }
+        }
+        
+        return CurrencyHelper::toUsd($amount, $currency);
     }
 
     /**

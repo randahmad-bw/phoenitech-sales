@@ -35,4 +35,13 @@ return [
         ],
     ],
 
+    'currency' => [
+        'rates' => [
+            'USD' => (float) env('CURRENCY_RATE_USD', 1.0),
+            'SAR' => (float) env('CURRENCY_RATE_SAR', 3.75),
+            'AED' => (float) env('CURRENCY_RATE_AED', 3.67),
+            'SYP' => (float) env('CURRENCY_RATE_SYP', 15000.0),
+        ]
+    ]
+
 ];
