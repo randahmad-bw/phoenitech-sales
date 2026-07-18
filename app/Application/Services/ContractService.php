@@ -172,6 +172,9 @@ class ContractService
     public function delete(int $id): bool
     {
         $contract = Contract::findOrFail($id);
+        if (in_array($contract->status, ['active', 'signed'])) {
+            return false;
+        }
         return $contract->delete();
     }
 
