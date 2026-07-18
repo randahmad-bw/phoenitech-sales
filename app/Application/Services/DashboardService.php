@@ -20,15 +20,15 @@ class DashboardService
         $year = $year ?? now()->year;
 
         return [
-            'stats' => $this->getOverviewStats(),
+            'stats' => $this->getOverviewStats($year),
             'charts' => [
                 'monthly_sales' => $this->getMonthlySalesChart($year),
                 'monthly_collections' => $this->getMonthlyCollectionsChart($year),
                 'contracts_by_status' => $this->getContractsByStatusChart(),
                 'top_employees' => $this->getTopEmployeesChart($year),
-                'top_services' => [],
+                'top_services' => $this->getTopServicesChart($year),
                 'year_comparison' => $this->getYearComparisonChart($year),
-                'employee_monthly_contracts' => $this->getEmployeeMonthlyContracts(),
+                'employee_monthly_contracts' => $this->getEmployeeMonthlyContracts($year),
             ],
         ];
     }
@@ -36,33 +36,32 @@ class DashboardService
     /**
      * Calculate overview KPI stats.
      */
-    private function getOverviewStats(): array
+    private function getOverviewStats(int $year): array
     {
-        $contracts = Contract::all();
+        $contracts = Contract::whereYear('start_date', $year)->get();
         $totalValue = $contracts->sum('contract_value');
-        $totalPaid = Payment::where('status', 'paid')->sum('amount');
+        $totalPaid = Payment::where('status', 'paid')->whereYear('payment_date', $year)->sum('amount');
         $thisMonth = now()->month;
-        $thisYear = now()->year;
 
         return [
-            'total_companies' => Company::count(),
-            'total_contacts' => DB::table('contacts')->count(),
+            'total_companies' => Company::whereYear('created_at', '<=', $year)->count(),
+            'total_contacts' => DB::table('contacts')->whereYear('created_at', '<=', $year)->count(),
             'total_contracts' => $contracts->count(),
             'active_contracts' => $contracts->where('status', 'active')->count(),
             'completed_contracts' => $contracts->where('status', 'completed')->count(),
             'cancelled_contracts' => $contracts->where('status', 'cancelled')->count(),
-            'expired_contracts' => Contract::where('end_date', '<', now())->whereNotIn('status', ['completed', 'cancelled'])->count(),
+            'expired_contracts' => Contract::whereYear('start_date', $year)->where('end_date', '<', now())->whereNotIn('status', ['completed', 'cancelled'])->count(),
             'total_contract_value' => round($totalValue, 2),
             'total_paid' => round($totalPaid, 2),
             'total_remaining' => round($totalValue - $totalPaid, 2),
             'collection_percentage' => $totalValue > 0 ? round(($totalPaid / $totalValue) * 100, 2) : 0,
             'avg_contract_value' => $contracts->count() > 0 ? round($totalValue / $contracts->count(), 2) : 0,
             'largest_contract' => round($contracts->max('contract_value') ?? 0, 2),
-            'new_contracts_this_month' => Contract::whereMonth('start_date', $thisMonth)->whereYear('start_date', $thisYear)->count(),
-            'new_companies_this_month' => Company::whereMonth('created_at', now()->month)->whereYear('created_at', now()->year)->count(),
-            'sales_this_month'         => round(Contract::whereMonth('start_date', $thisMonth)->whereYear('start_date', $thisYear)->sum('contract_value'), 2),
+            'new_contracts_this_month' => Contract::whereMonth('start_date', $thisMonth)->whereYear('start_date', $year)->count(),
+            'new_companies_this_month' => Company::whereMonth('created_at', $thisMonth)->whereYear('created_at', $year)->count(),
+            'sales_this_month'         => round(Contract::whereMonth('start_date', $thisMonth)->whereYear('start_date', $year)->sum('contract_value'), 2),
             'total_sales'              => round($totalValue, 2),
-            'collected_this_month'     => round(Payment::where('status', 'paid')->whereMonth('payment_date', $thisMonth)->whereYear('payment_date', $thisYear)->sum('amount'), 2),
+            'collected_this_month'     => round(Payment::where('status', 'paid')->whereMonth('payment_date', $thisMonth)->whereYear('payment_date', $year)->sum('amount'), 2),
         ];
     }
 
@@ -133,6 +132,28 @@ class DashboardService
     }
 
     /**
+     * Generate top 5 services by total contract value.
+     */
+    private function getTopServicesChart(int $year): array
+    {
+        return Contract::selectRaw('service_id, SUM(contract_value) as total, COUNT(*) as count')
+            ->with('service:id,name_ar,name_en')
+            ->whereYear('start_date', $year)
+            ->whereNotNull('service_id')
+            ->groupBy('service_id')
+            ->orderByDesc('total')
+            ->limit(5)
+            ->get()
+            ->map(fn ($item) => [
+                'name_ar' => $item->service?->name_ar ?? 'غير معروف',
+                'name_en' => $item->service?->name_en ?? 'Unknown',
+                'count' => $item->count,
+                'total' => round($item->total, 2),
+            ])
+            ->toArray();
+    }
+
+    /**
      * Generate year-over-year comparison chart data.
      */
     private function getYearComparisonChart(int $year): array
@@ -149,13 +170,13 @@ class DashboardService
     /**
      * Generate employee performance stats: contracts count this month vs previous month.
      */
-    private function getEmployeeMonthlyContracts(): array
+    private function getEmployeeMonthlyContracts(int $year): array
     {
         $now         = now();
         $thisMonth   = $now->month;
-        $thisYear    = $now->year;
+        $thisYear    = $year;
         $prevMonth   = $now->copy()->subMonth()->month;
-        $prevYear    = $now->copy()->subMonth()->year;
+        $prevYear    = $thisMonth == 1 ? $year - 1 : $year;
 
         $employees = DB::table('employees')
             ->select('id', 'name')
@@ -198,11 +219,16 @@ class DashboardService
                 ->sum('amount');
 
             // ── Totals ─────────────────────────────────
-            $totalContracts = Contract::where('employee_id', $employee->id)->count();
+            $totalContracts = Contract::where('employee_id', $employee->id)
+                ->whereYear('start_date', $year)
+                ->count();
 
-            $totalSales = Contract::where('employee_id', $employee->id)->sum('contract_value');
+            $totalSales = Contract::where('employee_id', $employee->id)
+                ->whereYear('start_date', $year)
+                ->sum('contract_value');
 
             $totalCollected = Payment::where('status', 'paid')
+                ->whereYear('payment_date', $year)
                 ->whereHas('contract', fn ($q) => $q->where('employee_id', $employee->id))
                 ->sum('amount');
 

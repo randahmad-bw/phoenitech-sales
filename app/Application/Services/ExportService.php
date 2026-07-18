@@ -8,6 +8,7 @@ use App\Models\Contract;
 use App\Models\Payment;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
+use Maatwebsite\Excel\Concerns\FromCollection;
 use Symfony\Component\HttpFoundation\Response;
 
 /**

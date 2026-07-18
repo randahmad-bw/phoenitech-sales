@@ -46,7 +46,10 @@ class ContractController extends Controller
 
     public function destroy(int $id): JsonResponse
     {
-        $this->service->delete($id);
+        $deleted = $this->service->delete($id);
+        if (!$deleted) {
+            return ApiResponse::conflict('Cannot delete active or signed contract.', 'CONTRACT_CANNOT_BE_DELETED');
+        }
         return ApiResponse::success(null, 'Contract deleted.');
     }
 

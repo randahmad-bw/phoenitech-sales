@@ -16,7 +16,9 @@ return new class extends Migration
         });
 
         // Alter enum to include 'renewed'
-        \Illuminate\Support\Facades\DB::statement("ALTER TABLE contracts MODIFY COLUMN status ENUM('draft', 'signed', 'active', 'completed', 'cancelled', 'suspended', 'renewed') DEFAULT 'draft'");
+        if (\Illuminate\Support\Facades\DB::connection()->getDriverName() === 'mysql') {
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE contracts MODIFY COLUMN status ENUM('draft', 'signed', 'active', 'completed', 'cancelled', 'suspended', 'renewed') DEFAULT 'draft'");
+        }
     }
 
     /**
@@ -25,8 +27,10 @@ return new class extends Migration
     public function down(): void
     {
         // Revert enum back (might lose 'renewed' statuses, so we should convert them to 'completed' or something before)
-        \Illuminate\Support\Facades\DB::statement("UPDATE contracts SET status = 'completed' WHERE status = 'renewed'");
-        \Illuminate\Support\Facades\DB::statement("ALTER TABLE contracts MODIFY COLUMN status ENUM('draft', 'signed', 'active', 'completed', 'cancelled', 'suspended') DEFAULT 'draft'");
+        if (\Illuminate\Support\Facades\DB::connection()->getDriverName() === 'mysql') {
+            \Illuminate\Support\Facades\DB::statement("UPDATE contracts SET status = 'completed' WHERE status = 'renewed'");
+            \Illuminate\Support\Facades\DB::statement("ALTER TABLE contracts MODIFY COLUMN status ENUM('draft', 'signed', 'active', 'completed', 'cancelled', 'suspended') DEFAULT 'draft'");
+        }
 
         Schema::table('contracts', function (Blueprint $table) {
             $table->dropForeign(['parent_contract_id']);

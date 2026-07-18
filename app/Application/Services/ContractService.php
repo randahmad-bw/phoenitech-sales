@@ -19,8 +19,11 @@ class ContractService
     public function list(array $filters = []): LengthAwarePaginator
     {
         $query = Contract::with(['company', 'employee', 'service'])
-            ->withCount('renewals')
-            ->whereNull('parent_contract_id');
+            ->withCount('renewals');
+
+        if (empty($filters['include_renewals']) && empty($filters['search'])) {
+            $query->whereNull('parent_contract_id');
+        }
 
         if (!empty($filters['search'])) {
             $search = $filters['search'];
@@ -160,11 +163,16 @@ class ContractService
     }
 
     /**
-     * Delete a contract regardless of its status.
+     * Delete a contract. Blocks deletion if status is active or signed.
      */
     public function delete(int $id): bool
     {
         $contract = Contract::findOrFail($id);
+        
+        if (in_array($contract->status, ['active', 'signed'])) {
+            return false;
+        }
+
         return $contract->delete();
     }
 
