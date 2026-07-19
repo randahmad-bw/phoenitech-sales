@@ -127,7 +127,7 @@ class DashboardService
             'total_companies' => Company::whereYear('created_at', '<=', $year)->count(),
             'total_contacts' => DB::table('contacts')->whereYear('created_at', '<=', $year)->count(),
             'total_contracts' => $parentContracts->count(),
-            'active_contracts' => $parentContracts->where('status', 'active')->count(),
+            'active_contracts' => $contracts->where('status', 'active')->count(),
             'completed_contracts' => $parentContracts->where('status', 'completed')->count(),
             'cancelled_contracts' => $parentContracts->where('status', 'cancelled')->count(),
             'expired_contracts' => Contract::whereYear('start_date', $year)->whereNull('parent_contract_id')->where('end_date', '<', now())->whereNotIn('status', ['completed', 'cancelled'])->count(),
