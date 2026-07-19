@@ -21,7 +21,15 @@ class ContractService
         $query = Contract::with(['company', 'employee', 'service'])
             ->withCount('renewals');
 
-        if (empty($filters['include_renewals']) && empty($filters['search'])) {
+        $isFiltered = !empty($filters['status']) || 
+                      !empty($filters['employee_id']) || 
+                      !empty($filters['company_id']) || 
+                      !empty($filters['uncollected']) || 
+                      !empty($filters['year']) || 
+                      !empty($filters['search']) || 
+                      !empty($filters['include_renewals']);
+
+        if (!$isFiltered) {
             $query->whereNull('parent_contract_id');
         }
 
