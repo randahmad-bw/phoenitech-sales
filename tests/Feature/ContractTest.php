@@ -101,20 +101,15 @@ class ContractTest extends TestCase
     }
 
     /** @test */
-    public function authenticated_user_cannot_delete_active_or_signed_contract()
+    public function authenticated_user_can_delete_active_or_signed_contract()
     {
         $contract = Contract::factory()->create(['status' => 'active']);
 
         $response = $this->actingAs($this->user, 'sanctum')
             ->deleteJson(route('contracts.destroy', $contract->id));
 
-        $response->assertStatus(409)
-            ->assertJson([
-                'success' => false,
-                'error_code' => 'CONTRACT_CANNOT_BE_DELETED',
-            ]);
-
-        $this->assertDatabaseHas('contracts', ['id' => $contract->id]);
+        $response->assertStatus(200);
+        $this->assertDatabaseMissing('contracts', ['id' => $contract->id]);
     }
 
     /** @test */

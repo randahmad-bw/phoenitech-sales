@@ -96,7 +96,7 @@ class DashboardService
         foreach ($contracts as $c) {
             foreach ($c->payments as $p) {
                 if ($p->status === 'paid') {
-                    $totalPaid += $this->paymentToUsd($p, (float)$p->amount);
+                    $totalPaid += $this->paymentToUsd($p, (float)$p->amount, $c);
                 }
             }
         }
@@ -119,21 +119,26 @@ class DashboardService
             ->get();
         $collectedThisMonth = $paymentsThisMonth->sum(fn($p) => $this->paymentToUsd($p, (float)$p->amount));
 
+        $parentContracts = $contracts->whereNull('parent_contract_id');
+        $newContractsThisMonth = $contractsThisMonth->whereNull('parent_contract_id');
+        $renewedContractsThisMonth = $contractsThisMonth->whereNotNull('parent_contract_id');
+
         return [
             'total_companies' => Company::whereYear('created_at', '<=', $year)->count(),
             'total_contacts' => DB::table('contacts')->whereYear('created_at', '<=', $year)->count(),
-            'total_contracts' => $contracts->count(),
-            'active_contracts' => $contracts->where('status', 'active')->count(),
-            'completed_contracts' => $contracts->where('status', 'completed')->count(),
-            'cancelled_contracts' => $contracts->where('status', 'cancelled')->count(),
-            'expired_contracts' => Contract::whereYear('start_date', $year)->where('end_date', '<', now())->whereNotIn('status', ['completed', 'cancelled'])->count(),
+            'total_contracts' => $parentContracts->count(),
+            'active_contracts' => $parentContracts->where('status', 'active')->count(),
+            'completed_contracts' => $parentContracts->where('status', 'completed')->count(),
+            'cancelled_contracts' => $parentContracts->where('status', 'cancelled')->count(),
+            'expired_contracts' => Contract::whereYear('start_date', $year)->whereNull('parent_contract_id')->where('end_date', '<', now())->whereNotIn('status', ['completed', 'cancelled'])->count(),
             'total_contract_value' => round($totalValue, 2),
             'total_paid' => round($totalPaid, 2),
             'total_remaining' => round($totalValue - $totalPaid, 2),
             'collection_percentage' => $totalValue > 0 ? round(($totalPaid / $totalValue) * 100, 2) : 0,
-            'avg_contract_value' => $contracts->count() > 0 ? round($totalValue / $contracts->count(), 2) : 0,
+            'avg_contract_value' => $parentContracts->count() > 0 ? round($parentContracts->sum(fn($c) => $this->contractToUsd($c, (float)$c->contract_value)) / $parentContracts->count(), 2) : 0,
             'largest_contract' => round($contracts->map(fn($c) => $this->contractToUsd($c, (float)$c->contract_value))->max() ?? 0, 2),
-            'new_contracts_this_month' => $contractsThisMonth->count(),
+            'new_contracts_this_month' => $newContractsThisMonth->count(),
+            'renewed_contracts_this_month' => $renewedContractsThisMonth->count(),
             'new_companies_this_month' => Company::whereMonth('created_at', $thisMonth)->whereYear('created_at', $year)->count(),
             'sales_this_month'         => round($salesThisMonth, 2),
             'total_sales'              => round($totalValue, 2),
