@@ -30,6 +30,8 @@ class ContractResource extends JsonResource
             'end_date' => $this->end_date?->format('Y-m-d'),
             'status' => $this->status,
             'progress_percentage' => $this->progress_percentage,
+            'category' => $this->category,
+            'category_custom' => $this->category_custom,
             'notes' => $this->notes,
             'total_paid' => $this->total_paid,
             'remaining_amount' => $this->remaining_amount,

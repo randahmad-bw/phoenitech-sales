@@ -29,6 +29,7 @@ class ContractsExport implements FromCollection, WithHeadings, WithMapping
             'Contract Number',
             'Company Name',
             'Employee Name',
+            'Category',
             'Service (EN)',
             'Service (AR)',
             'Contract Value',
@@ -37,6 +38,7 @@ class ContractsExport implements FromCollection, WithHeadings, WithMapping
             'End Date',
             'Status',
             'Progress (%)',
+            'Notes',
         ];
     }
 
@@ -45,10 +47,12 @@ class ContractsExport implements FromCollection, WithHeadings, WithMapping
      */
     public function map($contract): array
     {
+        $categoryDisplay = $contract->category === 'other' ? ($contract->category_custom ?? 'Other') : ($contract->category ?? 'N/A');
         return [
             $contract->contract_number,
             $contract->company?->name ?? 'N/A',
             $contract->employee?->name ?? 'N/A',
+            $categoryDisplay,
             $contract->service?->name_en ?? 'N/A',
             $contract->service?->name_ar ?? 'N/A',
             $contract->contract_value,
@@ -57,6 +61,7 @@ class ContractsExport implements FromCollection, WithHeadings, WithMapping
             $contract->end_date?->format('Y-m-d') ?? '',
             $contract->status,
             $contract->progress_percentage,
+            $contract->notes ?? '',
         ];
     }
 }

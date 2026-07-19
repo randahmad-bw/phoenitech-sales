@@ -57,6 +57,10 @@ class ContractService
             $query->where('status', $filters['status']);
         }
 
+        if (!empty($filters['category'])) {
+            $query->where('category', $filters['category']);
+        }
+
         if (isset($filters['uncollected']) && $filters['uncollected'] === 'true') {
             $query->whereRaw('contract_value > (select COALESCE(sum(amount), 0) from payments where payments.contract_id = contracts.id and payments.status = "paid")');
         }
@@ -238,6 +242,8 @@ class ContractService
         $newContract->end_date = $data['end_date'];
         $newContract->contract_value = $data['contract_value'];
         $newContract->exchange_rate = $data['exchange_rate'] ?? $oldContract->exchange_rate ?? 1.0;
+        $newContract->category = $data['category'] ?? $oldContract->category;
+        $newContract->category_custom = $data['category_custom'] ?? $oldContract->category_custom;
         $newContract->notes = $data['notes'] ?? null;
         $newContract->status = 'active';
         $newContract->progress_percentage = 0;

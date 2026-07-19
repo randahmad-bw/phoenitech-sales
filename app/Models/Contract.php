@@ -28,6 +28,8 @@ class Contract extends Model
         'end_date',
         'status',
         'progress_percentage',
+        'category',
+        'category_custom',
         'notes',
     ];
 
