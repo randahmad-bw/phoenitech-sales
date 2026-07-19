@@ -1,15 +1,17 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <title>Payments Export</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>تصدير الدفعات</title>
     <style>
         body {
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-family: 'DejaVu Sans', sans-serif;
             font-size: 11px;
             color: #333;
             margin: 0;
             padding: 0;
+            direction: rtl;
+            text-align: right;
         }
         .header {
             margin-bottom: 20px;
@@ -24,12 +26,14 @@
         .subtitle {
             font-size: 12px;
             color: #6b7280;
+            margin-top: 4px;
         }
         .meta {
-            text-align: right;
+            float: left;
+            text-align: left;
             font-size: 10px;
             color: #6b7280;
-            margin-top: -30px;
+            margin-top: -35px;
         }
         table {
             width: 100%;
@@ -40,13 +44,14 @@
             background-color: #065f46;
             color: #ffffff;
             font-weight: bold;
-            text-align: left;
+            text-align: right;
             padding: 8px;
             border: 1px solid #e5e7eb;
         }
         td {
             padding: 8px;
             border: 1px solid #e5e7eb;
+            text-align: right;
         }
         tr:nth-child(even) {
             background-color: #f9fafb;
@@ -57,7 +62,6 @@
             border-radius: 4px;
             font-size: 9px;
             font-weight: bold;
-            text-transform: uppercase;
         }
         .badge-paid { background-color: #d1fae5; color: #065f46; }
         .badge-pending { background-color: #fef3c7; color: #92400e; }
@@ -66,37 +70,37 @@
 <body>
     <div class="header">
         <div class="logo-text">PhoeniTech Sales</div>
-        <div class="subtitle">Payments List Report</div>
+        <div class="subtitle">تقرير سجل الدفعات</div>
         <div class="meta">
-            Generated: {{ now()->format('Y-m-d H:i') }}<br>
-            Total Records: {{ $payments->count() }}
+            تاريخ التصدير: {{ now()->format('Y-m-d H:i') }}<br>
+            عدد الدفعات: {{ $payments->count() }}
         </div>
     </div>
 
     <table>
         <thead>
             <tr>
-                <th>ID</th>
-                <th>Contract #</th>
-                <th>Company</th>
-                <th>Amount</th>
-                <th>Payment Date</th>
-                <th>Method</th>
-                <th>Status</th>
+                <th>المعرف</th>
+                <th>رقم العقد</th>
+                <th>الشركة</th>
+                <th>المبلغ</th>
+                <th>تاريخ الدفع</th>
+                <th>طريقة الدفع</th>
+                <th>الحالة</th>
             </tr>
         </thead>
         <tbody>
             @foreach($payments as $payment)
                 <tr>
                     <td>{{ $payment->id }}</td>
-                    <td><strong>{{ $payment->contract?->contract_number ?? 'N/A' }}</strong></td>
-                    <td>{{ $payment->contract?->company?->name ?? 'N/A' }}</td>
+                    <td><strong>{{ $payment->contract?->contract_number ?? '—' }}</strong></td>
+                    <td>{{ $payment->contract?->company?->name ?? '—' }}</td>
                     <td>{{ number_format($payment->amount, 2) }} {{ $payment->contract?->currency ?? 'USD' }}</td>
-                    <td>{{ $payment->payment_date?->format('Y-m-d') ?? 'N/A' }}</td>
+                    <td>{{ $payment->payment_date?->format('Y-m-d') ?? '—' }}</td>
                     <td>{{ str_replace('_', ' ', $payment->method) }}</td>
                     <td>
                         <span class="badge badge-{{ $payment->status }}">
-                            {{ $payment->status }}
+                            {{ $payment->status === 'paid' ? 'مدفوع' : 'معلّق' }}
                         </span>
                     </td>
                 </tr>
