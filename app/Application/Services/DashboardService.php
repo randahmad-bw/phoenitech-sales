@@ -304,6 +304,10 @@ class DashboardService
 
         $employees = DB::table('employees')
             ->select('id', 'name')
+            ->where(function ($q) {
+                $q->whereIn('department', ['sales', 'management'])
+                  ->orWhereNull('department');
+            })
             ->get();
 
         $data = [];

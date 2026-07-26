@@ -78,4 +78,44 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('export/contracts', [\App\Http\Controllers\Api\V1\ExportController::class, 'contracts'])->name('export.contracts');
     Route::get('export/payments', [\App\Http\Controllers\Api\V1\ExportController::class, 'payments'])->name('export.payments');
     Route::get('export/report', [\App\Http\Controllers\Api\V1\ExportController::class, 'report'])->name('export.report');
+
+    // ─── Social Media Module ───
+    Route::prefix('sm')->group(function () {
+        $ctrl = \App\Http\Controllers\Api\V1\SocialMedia\SocialMediaController::class;
+
+        // Packages
+        Route::get('packages', [$ctrl, 'listPackages'])->name('sm.packages.index');
+        Route::post('packages', [$ctrl, 'storePackage'])->name('sm.packages.store');
+        Route::put('packages/{id}', [$ctrl, 'updatePackage'])->name('sm.packages.update');
+        Route::delete('packages/{id}', [$ctrl, 'deletePackage'])->name('sm.packages.destroy');
+
+        // Content Plans
+        Route::get('plans', [$ctrl, 'listPlans'])->name('sm.plans.index');
+        Route::post('plans', [$ctrl, 'storePlan'])->name('sm.plans.store');
+        Route::post('plans/batch', [$ctrl, 'storePlanWithItems'])->name('sm.plans.batch');
+        Route::get('plans/{id}', [$ctrl, 'showPlan'])->name('sm.plans.show');
+        Route::put('plans/{id}', [$ctrl, 'updatePlan'])->name('sm.plans.update');
+        Route::delete('plans/{id}', [$ctrl, 'deletePlan'])->name('sm.plans.destroy');
+
+        // Content Items
+        Route::get('items', [$ctrl, 'listItems'])->name('sm.items.index');
+        Route::post('items', [$ctrl, 'storeItem'])->name('sm.items.store');
+        Route::put('items/{id}', [$ctrl, 'updateItem'])->name('sm.items.update');
+        Route::patch('items/{id}/toggle', [$ctrl, 'toggleCheckboxes'])->name('sm.items.toggle');
+        Route::delete('items/{id}', [$ctrl, 'deleteItem'])->name('sm.items.destroy');
+
+        // Photo Sessions
+        Route::get('sessions', [$ctrl, 'listSessions'])->name('sm.sessions.index');
+        Route::post('sessions', [$ctrl, 'storeSession'])->name('sm.sessions.store');
+        Route::put('sessions/{id}', [$ctrl, 'updateSession'])->name('sm.sessions.update');
+        Route::patch('sessions/{id}/status', [$ctrl, 'updateSessionStatus'])->name('sm.sessions.status');
+        Route::delete('sessions/{id}', [$ctrl, 'deleteSession'])->name('sm.sessions.destroy');
+
+        // Dashboard, Workload & Calendar
+        Route::get('alerts', [$ctrl, 'alerts'])->name('sm.alerts');
+        Route::get('dashboard', [$ctrl, 'dashboard'])->name('sm.dashboard');
+        Route::get('workload', [$ctrl, 'workload'])->name('sm.workload');
+        Route::get('calendar', [$ctrl, 'calendar'])->name('sm.calendar');
+    });
 });
+

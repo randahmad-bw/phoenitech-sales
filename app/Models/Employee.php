@@ -2,13 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\SocialMedia\ContentItem;
+use App\Models\SocialMedia\PhotoSession;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * Employee model representing a sales team member.
+ * Employee model representing a team member.
  */
 class Employee extends Model
 {
@@ -18,6 +20,7 @@ class Employee extends Model
         'name',
         'phone',
         'email',
+        'department',
         'employment_date',
     ];
 
@@ -62,4 +65,21 @@ class Employee extends Model
     {
         return $this->hasMany(WeeklyReport::class);
     }
+
+    /**
+     * Content items assigned to this employee (design tasks).
+     */
+    public function assignedItems(): HasMany
+    {
+        return $this->hasMany(ContentItem::class, 'assigned_to');
+    }
+
+    /**
+     * Photo sessions where this employee is the photographer.
+     */
+    public function photoSessions(): HasMany
+    {
+        return $this->hasMany(PhotoSession::class, 'photographer_id');
+    }
 }
+

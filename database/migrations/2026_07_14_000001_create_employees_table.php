@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Employees table — stores sales team member profiles.
+ * Employees table — stores team member profiles and departments.
  */
 return new class extends Migration
 {
@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('phone')->nullable();
             $table->string('email')->nullable();
+            $table->string('department', 50)->default('design'); // design | photography | video | sales | management
             $table->date('employment_date')->nullable();
             $table->timestamps();
         });

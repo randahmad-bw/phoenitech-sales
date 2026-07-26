@@ -8,13 +8,10 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
 /**
- * Seeds sample employee records for development and testing.
+ * Seeds sample employee records with departments for testing.
  */
 class EmployeeSeeder extends Seeder
 {
-    /**
-     * Insert sample employee records.
-     */
     public function run(): void
     {
         $employees = [
@@ -22,18 +19,21 @@ class EmployeeSeeder extends Seeder
                 'name' => 'سارة حسون',
                 'phone' => '+963932735439',
                 'email' => 'sara@phoenitech.com',
+                'department' => 'sales',
                 'employment_date' => '2026-01-01',
             ],
             [
                 'name' => 'مايكل حبيب',
                 'phone' => '+963985763524',
                 'email' => 'michael@phoenitech.com',
+                'department' => 'sales',
                 'employment_date' => '2025-12-01',
             ],
             [
                 'name' => 'الإدارة',
-                'phone' => null,
+                'phone' => '+963999232959',
                 'email' => 'info@phoenitech.com',
+                'department' => 'management',
                 'employment_date' => '2025-01-01',
             ],
         ];
@@ -54,6 +54,7 @@ class EmployeeSeeder extends Seeder
                     'name' => $data['name'],
                     'phone' => $data['phone'],
                     'email' => $data['email'],
+                    'department' => $data['department'],
                     'employment_date' => $data['employment_date'],
                 ]
             );

@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\SocialMedia\ContentPlan;
+use App\Models\SocialMedia\SmPackage;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 /**
@@ -118,6 +121,22 @@ class Contract extends Model
     public function attachments(): MorphMany
     {
         return $this->morphMany(Attachment::class, 'attachable');
+    }
+
+    /**
+     * Social media package (monthly quotas) for this contract.
+     */
+    public function smPackage(): HasOne
+    {
+        return $this->hasOne(SmPackage::class);
+    }
+
+    /**
+     * Monthly content plans for this contract.
+     */
+    public function contentPlans(): HasMany
+    {
+        return $this->hasMany(ContentPlan::class);
     }
 
     /**

@@ -20,6 +20,7 @@ class EmployeeResource extends JsonResource
             'name' => $this->name,
             'phone' => $this->phone,
             'email' => $this->email,
+            'department' => $this->department,
             'employment_date' => $this->employment_date?->format('Y-m-d'),
             'companies_count' => $this->whenCounted('companies'),
             'contracts_count' => $this->whenCounted('contracts'),
