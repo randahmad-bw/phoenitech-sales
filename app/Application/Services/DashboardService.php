@@ -302,13 +302,14 @@ class DashboardService
         $prevMonth   = $now->copy()->subMonth()->month;
         $prevYear    = $thisMonth == 1 ? $year - 1 : $year;
 
-        $employees = DB::table('employees')
-            ->select('id', 'name')
-            ->where(function ($q) {
+        $query = DB::table('employees')->select('id', 'name');
+        if (\Illuminate\Support\Facades\Schema::hasColumn('employees', 'department')) {
+            $query->where(function ($q) {
                 $q->whereIn('department', ['sales', 'management'])
                   ->orWhereNull('department');
-            })
-            ->get();
+            });
+        }
+        $employees = $query->get();
 
         $data = [];
         foreach ($employees as $employee) {
