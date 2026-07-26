@@ -216,15 +216,15 @@ class ContractService
     {
         $oldContract = Contract::findOrFail($id);
         
-        // Mark old contract as renewed
-        $oldContract->update(['status' => 'renewed']);
+        // Mark old contract as completed
+        $oldContract->update(['status' => 'completed']);
 
         // Record renewal history on the old contract
         ContractHistory::create([
             'contract_id' => $oldContract->id,
             'field_name'  => 'status',
             'old_value'   => $oldContract->getOriginal('status'),
-            'new_value'   => 'renewed',
+            'new_value'   => 'completed',
             'action'      => 'renewed',
         ]);
 

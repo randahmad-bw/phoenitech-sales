@@ -26,7 +26,7 @@ class ContractSeeder extends Seeder
                 'value' => 150,
                 'start_date' => '2026-01-10',
                 'end_date' => '2026-02-10',
-                'status' => 'renewed',
+                'status' => 'completed',
                 'progress' => 100,
                 'category' => 'social',
                 'notes' => 'الباقة: 6 ريل + 6 بوست. مدة العقد: شهر',
