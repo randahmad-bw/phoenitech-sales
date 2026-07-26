@@ -81,11 +81,15 @@ class ContractService
             $query->whereMonth('start_date', $filters['month']);
         }
 
-        $perPage = $filters['per_page'] ?? 100;
-        return $query->orderByRaw('case when start_date is null then 1 else 0 end desc')
-            ->orderBy('start_date', 'desc')
-            ->orderBy('id', 'desc')
-            ->paginate($perPage);
+        return $query->orderByRaw('
+            COALESCE(
+                (SELECT MAX(r.start_date) FROM contracts r WHERE r.parent_contract_id = contracts.id),
+                contracts.start_date,
+                contracts.created_at
+            ) DESC
+        ')
+        ->orderBy('id', 'desc')
+        ->paginate($perPage);
     }
 
     /**
