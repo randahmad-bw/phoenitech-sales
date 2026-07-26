@@ -40,6 +40,9 @@ class EmployeeService
      */
     public function create(array $data): Employee
     {
+        if (isset($data['department']) && !\Illuminate\Support\Facades\Schema::hasColumn('employees', 'department')) {
+            unset($data['department']);
+        }
         return Employee::create($data);
     }
 
@@ -57,6 +60,9 @@ class EmployeeService
     public function update(int $id, array $data): Employee
     {
         $employee = Employee::findOrFail($id);
+        if (isset($data['department']) && !\Illuminate\Support\Facades\Schema::hasColumn('employees', 'department')) {
+            unset($data['department']);
+        }
         $employee->update($data);
         return $employee->fresh();
     }
