@@ -7,6 +7,19 @@ namespace App\Http\Requests;
  */
 class UpdateEmployeeRequest extends BaseFormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('employment_date') && $this->input('employment_date') === '') {
+            $this->merge(['employment_date' => null]);
+        }
+        if ($this->has('email') && $this->input('email') === '') {
+            $this->merge(['email' => null]);
+        }
+        if ($this->has('phone') && $this->input('phone') === '') {
+            $this->merge(['phone' => null]);
+        }
+    }
+
     public function rules(): array
     {
         return [

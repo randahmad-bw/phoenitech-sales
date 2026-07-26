@@ -45,6 +45,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Employees
+    Route::match(['put', 'patch', 'post'], 'employees/{employee}', [EmployeeController::class, 'update']);
     Route::apiResource('employees', EmployeeController::class);
     Route::get('employees/{employee}/stats', [EmployeeController::class, 'stats'])->name('employees.stats');
 
