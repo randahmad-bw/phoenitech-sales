@@ -11,6 +11,8 @@ class StoreCompanyRequest extends BaseFormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
+            'client_name' => ['nullable', 'string', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:50'],
             'activity' => ['nullable', 'string', 'max:255'],
             'address' => ['nullable', 'string'],
             'employee_id' => ['nullable', 'integer', 'exists:employees,id'],

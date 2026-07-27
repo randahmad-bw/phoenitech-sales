@@ -19,7 +19,12 @@ class CompanyService
             ->withCount(['contacts', 'contracts']);
 
         if (!empty($filters['search'])) {
-            $query->where('name', 'like', "%{$filters['search']}%");
+            $s = $filters['search'];
+            $query->where(function ($q) use ($s) {
+                $q->where('name', 'like', "%{$s}%")
+                  ->orWhere('client_name', 'like', "%{$s}%")
+                  ->orWhere('phone', 'like', "%{$s}%");
+            });
         }
 
         if (!empty($filters['employee_id'])) {

@@ -32,7 +32,11 @@ class ContractService
                       !empty($filters['include_renewals']);
 
         if (!$isFiltered) {
-            $query->whereNull('parent_contract_id');
+            $query->whereIn('id', function ($sub) {
+                $sub->selectRaw('MAX(id)')
+                    ->from('contracts')
+                    ->groupByRaw('COALESCE(parent_contract_id, id)');
+            });
         }
 
         if (!empty($filters['search'])) {
@@ -284,17 +288,31 @@ class ContractService
      */
     public function getTree(int $id): Contract
     {
-        $contract = Contract::findOrFail($id);
+        $contract = Contract::with(['company', 'employee', 'service'])->findOrFail($id);
         $rootId = $contract->getRootParentId();
         
-        return Contract::with([
+        $rootContract = Contract::with([
             'company', 
             'employee', 
             'service', 
             'histories', 
             'renewals' => function ($q) {
-                $q->with(['histories', 'employee']);
+                $q->with(['histories', 'employee'])->orderBy('start_date', 'asc');
             }
         ])->findOrFail($rootId);
+
+        // If requested contract is NOT the root contract, filter renewals to include root + all previous renewals except the requested contract itself
+        if ($rootId !== $id) {
+            $previousContracts = collect([$rootContract])
+                ->concat($rootContract->renewals)
+                ->where('id', '!=', $id)
+                ->sortBy('start_date')
+                ->values();
+            
+            $contract->setRelation('renewals', $previousContracts);
+            return $contract;
+        }
+
+        return $rootContract;
     }
 }

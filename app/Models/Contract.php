@@ -100,6 +100,17 @@ class Contract extends Model
     }
 
     /**
+     * Get the count of previous/other contracts in the same renewal chain.
+     */
+    public function getPreviousContractsCountAttribute(): int
+    {
+        $rootId = $this->getRootParentId();
+        return static::where(function ($q) use ($rootId) {
+            $q->where('id', $rootId)->orWhere('parent_contract_id', $rootId);
+        })->where('id', '!=', $this->id)->count();
+    }
+
+    /**
      * The service type of this contract.
      */
     public function service(): BelongsTo

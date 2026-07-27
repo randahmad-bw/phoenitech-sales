@@ -39,7 +39,8 @@ class ContractResource extends JsonResource
             'payments' => PaymentResource::collection($this->whenLoaded('payments')),
             'attachments' => AttachmentResource::collection($this->whenLoaded('attachments')),
             'renewals' => ContractResource::collection($this->whenLoaded('renewals')),
-            'renewals_count' => $this->renewals_count,
+            'renewals_count' => $this->previous_contracts_count > 0 ? $this->previous_contracts_count : $this->renewals_count,
+            'previous_contracts_count' => $this->previous_contracts_count,
             'histories' => $this->whenLoaded('histories'),
             'created_at' => $this->created_at?->toISOString(),
         ];
