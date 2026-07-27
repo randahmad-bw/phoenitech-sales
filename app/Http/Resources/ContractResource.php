@@ -20,6 +20,8 @@ class ContractResource extends JsonResource
             'id' => $this->id,
             'parent_contract_id' => $this->parent_contract_id,
             'contract_number' => $this->contract_number,
+            'company_id' => $this->company_id,
+            'employee_id' => $this->employee_id,
             'company' => new CompanyResource($this->whenLoaded('company')),
             'employee' => new EmployeeResource($this->whenLoaded('employee')),
             'service' => new ServiceResource($this->whenLoaded('service')),
