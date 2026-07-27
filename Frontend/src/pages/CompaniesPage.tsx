@@ -228,14 +228,6 @@ export const CompaniesPage: React.FC = () => {
             <div className="text-[10px] text-text-muted font-bold uppercase tracking-wider">{t('company.activity', 'النشاط')}</div>
             <div className="text-sm font-semibold text-text mt-1">{company.activity || '—'}</div>
           </div>
-          <div>
-            <div className="text-[10px] text-text-muted font-bold uppercase tracking-wider">مدير الحساب</div>
-            <div className="text-sm font-semibold text-text mt-1">{company.employee?.name || 'غير محدد'}</div>
-          </div>
-          <div>
-            <div className="text-[10px] text-text-muted font-bold uppercase tracking-wider">عدد العقود</div>
-            <div className="text-sm font-semibold text-text mt-1">{company.contracts_count ?? 0}</div>
-          </div>
           <div className="col-span-2">
             <div className="text-[10px] text-text-muted font-bold uppercase tracking-wider">العنوان</div>
             <div className="text-sm text-text mt-1">{company.address || '—'}</div>
@@ -273,12 +265,6 @@ export const CompaniesPage: React.FC = () => {
       </span>
     )},
     { key: 'activity', header: 'النشاط', render: (row: any) => row.activity || '—' },
-    { key: 'employee', header: 'مدير الحساب', render: (row: any) => row.employee?.name || '—' },
-    { key: 'contracts_count', header: 'العقود', className: 'text-center', render: (row: any) => (
-      <span className={`inline-flex items-center justify-center min-w-[24px] px-1.5 py-0.5 rounded-full text-xs font-bold ${(row.contracts_count ?? 0) > 0 ? 'bg-primary-bg text-primary-text' : 'text-text-muted'}`}>
-        {row.contracts_count ?? 0}
-      </span>
-    )},
     { key: 'actions', header: 'إجراءات', className: 'text-end', render: (row: any) => (
       <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
         <Button variant="ghost" size="sm" onClick={() => setViewCompanyId(row.id)}>
@@ -348,8 +334,9 @@ export const CompaniesPage: React.FC = () => {
           </div>
           <Input label="اسم العميل / الشخص المسؤول" placeholder="مثال: أحمد محمد" error={errors.client_name?.message} {...register('client_name')} />
           <Input label="رقم الهاتف" placeholder="مثال: 0912345678" error={errors.phone?.message} {...register('phone')} />
-          <Input label="النشاط / المجال" placeholder="مثال: مطاعم، تجارة..." error={errors.activity?.message} {...register('activity')} />
-          <Select label="مدير الحساب" options={employeeOptions} error={errors.employee_id?.message} {...register('employee_id')} />
+          <div className="col-span-2">
+            <Input label="النشاط / المجال" placeholder="مثال: مطاعم، تجارة..." error={errors.activity?.message} {...register('activity')} />
+          </div>
           <div className="col-span-2">
             <Input label="العنوان" placeholder="مثال: دمشق، شارع..." error={errors.address?.message} {...register('address')} />
           </div>
