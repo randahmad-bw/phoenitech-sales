@@ -18,7 +18,7 @@ class ContractService
      */
     public function list(array $filters = []): LengthAwarePaginator
     {
-        $perPage = (int) ($filters['per_page'] ?? 15);
+        $perPage = (int) ($filters['per_page'] ?? 25);
 
         $query = Contract::with(['company', 'employee', 'service'])
             ->withCount('renewals');

@@ -33,7 +33,7 @@ class CompanyService
 
         $sortField = $filters['sort'] ?? 'created_at';
         $sortDir = $filters['direction'] ?? 'desc';
-        $perPage = $filters['per_page'] ?? 100;
+        $perPage = $filters['per_page'] ?? 25;
 
         return $query->orderBy($sortField, $sortDir)->paginate($perPage);
     }

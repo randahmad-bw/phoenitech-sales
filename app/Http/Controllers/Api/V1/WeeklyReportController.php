@@ -40,7 +40,7 @@ class WeeklyReportController extends Controller
             }
         }
 
-        $perPage = $request->integer('per_page', 15);
+        $perPage = $request->integer('per_page', 25);
         $reports = $query->orderBy('week_start_date', 'desc')->paginate($perPage);
 
         return ApiResponse::paginated(new WeeklyReportCollection($reports), 'Weekly reports retrieved.');
