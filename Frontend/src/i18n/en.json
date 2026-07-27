@@ -1,0 +1,165 @@
+{
+  "nav": { "dashboard": "Dashboard", "employees": "Employees", "companies": "Companies", "services": "Services", "contracts": "Contracts", "reports": "Reports", "weekly_reports": "Weekly Reports", "monthly_report": "Monthly Report", "yearly_report": "Yearly Report", "settings": "Settings", "social_media": "Social Media Management" },
+  "auth": { "login": "Login", "logout": "Logout", "email": "Email", "password": "Password", "login_btn": "Sign In", "login_error": "Invalid email or password" },
+  "common": { "create": "Create", "edit": "Edit", "delete": "Delete", "save": "Save", "cancel": "Cancel", "search": "Search...", "export": "Export", "filter": "Filter", "reset": "Reset", "loading": "Loading...", "no_data": "No data available", "confirm_delete": "Are you sure you want to delete this item?", "yes": "Yes", "no": "No", "actions": "Actions", "status": "Status", "name": "Name", "phone": "Phone", "email": "Email", "notes": "Notes", "back": "Back", "view": "View", "close": "Close", "total": "Total", "of": "of", "previous": "Previous", "next": "Next", "page": "Page", "per_page": "Per page", "showing": "Showing", "to": "to" },
+  "dashboard": { "title": "Dashboard", "total_companies": "Total Companies", "total_contacts": "Total Contacts", "total_contracts": "Total Contracts", "active_contracts": "Active Contracts", "completed_contracts": "Completed Contracts", "cancelled_contracts": "Cancelled Contracts", "expired_contracts": "Expired Contracts", "total_value": "Total Contract Value", "total_paid": "Total Paid", "total_remaining": "Total Remaining", "collection_pct": "Collection %", "avg_value": "Average Value", "largest_contract": "Largest Contract", "new_contracts_month": "Contracts This Month", "new_companies_month": "New Companies", "monthly_sales": "Monthly Sales", "monthly_collections": "Monthly Collections", "by_status": "Contracts by Status", "top_employees": "Top Employees", "year_comparison": "Year Comparison", "employee_monthly_stats": "Detailed Employee Performance Statistics", "contracts_this_month": "Contracts This Month", "contracts_prev_month": "Contracts Previous Month", "sales_this_month": "Sales This Month", "collected_this_month": "Collected This Month", "total_sales": "Total Sales", "total_collected": "Total Collected" },
+  "employee": { "title": "Employees", "add": "Add Employee", "full_name": "Full Name", "employment_date": "Employment Date", "companies_count": "Companies", "contracts_count": "Contracts", "stats": "Statistics", "total_value": "Total Value", "total_paid": "Total Paid", "remaining": "Remaining", "avg_value": "Avg Value" },
+  "company": { "title": "Companies", "add": "Add Company", "company_name": "Company Name", "activity": "Activity", "address": "Address", "assigned_employee": "Assigned Employee", "contacts_tab": "Contacts", "contracts_tab": "Contracts" },
+  "contact": { "title": "Contact Persons", "add": "Add Contact", "position": "Position", "mobile": "Mobile" },
+  "service": { "title": "Services", "add": "Add Service", "name_ar": "Name (Arabic)", "name_en": "Name (English)", "active": "Active" },
+  "contract": {
+    "title": "Contracts",
+    "subtitle": "Configure client contract packages, track payment milestones, and upload scans.",
+    "add": "Create Contract",
+    "edit": "Modify Contract Details",
+    "delete": "Delete Contract",
+    "contract_number": "Contract #",
+    "company": "Company",
+    "company_name": "Company / Client Name",
+    "employee": "Account Manager",
+    "select_employee": "— Select Employee —",
+    "service": "Service",
+    "category": "Contract Category",
+    "category_custom": "Category Details (if other)",
+    "select_category": "— Select Category —",
+    "value": "Value",
+    "currency": "Currency",
+    "exchange_rate": "Exchange Rate vs USD",
+    "exchange_rate_label": "Exchange Rate:",
+    "start_date": "Start Date",
+    "end_date": "End Date",
+    "progress": "Progress",
+    "total_paid": "Paid",
+    "remaining": "Remaining",
+    "collection_pct": "Collection %",
+    "payments_tab": "Payments",
+    "attachments_tab": "Attachments",
+    "initial_payment": "Initial Payment at Signing",
+    "renew": "Renew Contract",
+    "renew_desc": "The current contract status will be changed to 'Renewed' and a new contract will be generated. Payment history will not be copied.",
+    "status_renewed": "Renewed",
+    "renewed_tag": "Renewed",
+    "renewals_history": "Renewal History",
+    "no_renewals_found": "No renewal contracts found for this contract.",
+    "renewed_date": "Renewal Date",
+    "filter_status": "— Filter by Status —",
+    "filter_category": "— Filter by Category —",
+    "filter_employee": "— Filter by Employee —",
+    "filter_collection": "Filter by Collection Status",
+    "filter_all_collection": "— Collection Status —",
+    "filter_uncollected": "Not Fully Collected",
+    "filter_year": "— Filter by Year —",
+    "filter_all": "All Contracts",
+    "internal_management": "Internal Management",
+    "unassigned": "Unassigned",
+    "confirm_delete": "Are you sure you want to permanently delete this contract? All associated payments and attachments will be removed.",
+    "upload_file": "Upload File",
+    "dossier_title": "Contract Dossier",
+    "notes_section": "Notes & Terms",
+    "load_failed": "Failed to load contract details.",
+    "categories": {
+      "social": "Social Media",
+      "menu": "Digital Menu",
+      "visual_identity": "Visual Identity",
+      "accounting_software": "Accounting Software",
+      "hardware": "Hardware Equipment",
+      "custom_dev": "Custom Development",
+      "other": "Other"
+    }
+  },
+  "payment": { "title": "Payments", "add": "Add Payment", "amount": "Amount", "payment_date": "Date", "method": "Method", "cash": "Cash", "bank_transfer": "Bank Transfer", "check": "Check", "other": "Other" },
+  "status": { "draft": "Draft", "signed": "Signed", "active": "Active", "completed": "Completed", "cancelled": "Cancelled", "suspended": "Suspended", "renewed": "Renewed", "paid": "Paid", "pending": "Pending" },
+  "report": { "title": "Reports", "monthly": "Monthly Report", "yearly": "Yearly Report", "new_companies": "New Companies", "new_contracts": "New Contracts", "collected": "Collected", "vs_previous": "vs Previous", "best_month": "Best Month", "best_employee": "Best Employee", "top_service": "Top Service" },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Configure system options, interface locales, and read security policy.",
+    "locale_title": "Localization",
+    "locale_desc": "Set the primary language of the user interface. Changing this will translate dashboard cards, chart labels, and adjust layout direction.",
+    "language_label": "Display Language",
+    "profile_title": "Current Account",
+    "profile_desc": "You are currently signed in as an administrator.",
+    "name_label": "Admin Name",
+    "email_label": "E-mail Address",
+    "security_title": "System Compliance & Access Controls",
+    "security_desc": "This is a secure internal application. All actions are logged against your profile."
+  },
+  "sm": {
+    "tabs": {
+      "dashboard": "Dashboard",
+      "plans": "Monthly Plans",
+      "tasks": "Tasks",
+      "sessions": "Photo Sessions"
+    },
+    "stats": {
+      "pending": "Pending",
+      "in_progress": "In Progress",
+      "completed": "Completed",
+      "overdue": "Overdue",
+      "total_items": "Total Content",
+      "active_plans": "Active Plans",
+      "upcoming_sessions": "Upcoming Sessions"
+    },
+    "status": {
+      "pending": "Pending",
+      "in_progress": "In Progress",
+      "completed": "Completed",
+      "draft": "Draft",
+      "active": "Active",
+      "scheduled": "Scheduled",
+      "cancelled": "Cancelled"
+    },
+    "plans": {
+      "title": "Monthly Plans",
+      "add": "New Plan"
+    },
+    "tasks": {
+      "title": "Tasks",
+      "add": "New Task"
+    },
+    "sessions": {
+      "title": "Photo Sessions",
+      "add": "New Session"
+    },
+    "packages": {
+      "add": "Add Package"
+    },
+    "package": {
+      "name": "Package Name",
+      "posts": "Posts",
+      "reels": "Reels",
+      "stories": "Stories"
+    },
+    "workload": {
+      "title": "Team Task Distribution"
+    },
+    "field": {
+      "contract": "Contract",
+      "plan": "Plan",
+      "month": "Month",
+      "year": "Year"
+    },
+    "item": {
+      "title": "Title",
+      "type": "Type",
+      "client": "Client",
+      "designer": "Designer",
+      "publish_date": "Publish Date"
+    },
+    "session": {
+      "date": "Date",
+      "time": "Time",
+      "photographer": "Photographer"
+    },
+    "filter": {
+      "all_statuses": "All Statuses",
+      "all_types": "All Types",
+      "all_designers": "All Designers"
+    },
+    "items_count": "Content",
+    "sessions_count": "Sessions",
+    "assign": "Assign...",
+    "no_photographer": "No Photographer",
+    "linked_reels": "Linked Reels",
+    "no_items": "No content items yet"
+  }
+}
