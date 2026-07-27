@@ -256,6 +256,7 @@ export const CompaniesPage: React.FC = () => {
         {row.phone ? <><Phone size={13} className="text-emerald-400 shrink-0" />{row.phone}</> : '—'}
       </span>
     )},
+    { key: 'activity', header: 'النشاط', render: (row: any) => row.activity || '—' },
     { key: 'actions', header: 'إجراءات', className: 'text-end', render: (row: any) => (
       <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
         <Button variant="ghost" size="sm" onClick={() => setViewCompanyId(row.id)}>
