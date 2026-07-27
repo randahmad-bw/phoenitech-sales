@@ -224,14 +224,6 @@ export const CompaniesPage: React.FC = () => {
               ) : '—'}
             </div>
           </div>
-          <div>
-            <div className="text-[10px] text-text-muted font-bold uppercase tracking-wider">{t('company.activity', 'النشاط')}</div>
-            <div className="text-sm font-semibold text-text mt-1">{company.activity || '—'}</div>
-          </div>
-          <div className="col-span-2">
-            <div className="text-[10px] text-text-muted font-bold uppercase tracking-wider">العنوان</div>
-            <div className="text-sm text-text mt-1">{company.address || '—'}</div>
-          </div>
           <div className="col-span-2">
             <div className="text-[10px] text-text-muted font-bold uppercase tracking-wider">ملاحظات</div>
             <div className="text-sm text-text-muted mt-1 bg-surface-lighter p-3 rounded-lg border border-border">{company.notes || '—'}</div>
@@ -264,7 +256,6 @@ export const CompaniesPage: React.FC = () => {
         {row.phone ? <><Phone size={13} className="text-emerald-400 shrink-0" />{row.phone}</> : '—'}
       </span>
     )},
-    { key: 'activity', header: 'النشاط', render: (row: any) => row.activity || '—' },
     { key: 'actions', header: 'إجراءات', className: 'text-end', render: (row: any) => (
       <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
         <Button variant="ghost" size="sm" onClick={() => setViewCompanyId(row.id)}>
@@ -334,12 +325,6 @@ export const CompaniesPage: React.FC = () => {
           </div>
           <Input label="اسم العميل / الشخص المسؤول" placeholder="مثال: أحمد محمد" error={errors.client_name?.message} {...register('client_name')} />
           <Input label="رقم الهاتف" placeholder="مثال: 0912345678" error={errors.phone?.message} {...register('phone')} />
-          <div className="col-span-2">
-            <Input label="النشاط / المجال" placeholder="مثال: مطاعم، تجارة..." error={errors.activity?.message} {...register('activity')} />
-          </div>
-          <div className="col-span-2">
-            <Input label="العنوان" placeholder="مثال: دمشق، شارع..." error={errors.address?.message} {...register('address')} />
-          </div>
           <div className="col-span-2">
             <Textarea label="ملاحظات" error={errors.notes?.message} {...register('notes')} />
           </div>
