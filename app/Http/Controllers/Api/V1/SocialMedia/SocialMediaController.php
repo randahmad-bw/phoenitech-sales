@@ -26,12 +26,17 @@ class SocialMediaController extends Controller
     public function storePackage(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'contract_id' => 'required|exists:contracts,id|unique:sm_packages,contract_id',
-            'package_name' => 'nullable|string|max:255',
-            'monthly_posts' => 'integer|min:0',
-            'monthly_reels' => 'integer|min:0',
-            'monthly_stories' => 'integer|min:0',
-            'notes' => 'nullable|string',
+            'contract_id'      => 'nullable|exists:contracts,id',
+            'package_name'     => 'nullable|string|max:255',
+            'price'            => 'nullable|numeric|min:0',
+            'monthly_posts'    => 'integer|min:0',
+            'monthly_reels'    => 'integer|min:0',
+            'monthly_stories'  => 'integer|min:0',
+            'boost_reel_cost'  => 'nullable|numeric|min:0',
+            'boost_post_cost'  => 'nullable|numeric|min:0',
+            'boost_story_cost' => 'nullable|numeric|min:0',
+            'is_custom'        => 'boolean',
+            'notes'            => 'nullable|string',
         ]);
 
         $package = $this->service->createPackage($data);
@@ -41,11 +46,16 @@ class SocialMediaController extends Controller
     public function updatePackage(Request $request, int $id): JsonResponse
     {
         $data = $request->validate([
-            'package_name' => 'nullable|string|max:255',
-            'monthly_posts' => 'integer|min:0',
-            'monthly_reels' => 'integer|min:0',
-            'monthly_stories' => 'integer|min:0',
-            'notes' => 'nullable|string',
+            'package_name'     => 'nullable|string|max:255',
+            'price'            => 'nullable|numeric|min:0',
+            'monthly_posts'    => 'integer|min:0',
+            'monthly_reels'    => 'integer|min:0',
+            'monthly_stories'  => 'integer|min:0',
+            'boost_reel_cost'  => 'nullable|numeric|min:0',
+            'boost_post_cost'  => 'nullable|numeric|min:0',
+            'boost_story_cost' => 'nullable|numeric|min:0',
+            'is_custom'        => 'boolean',
+            'notes'            => 'nullable|string',
         ]);
 
         $package = $this->service->updatePackage($id, $data);

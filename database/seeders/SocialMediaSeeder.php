@@ -22,6 +22,51 @@ class SocialMediaSeeder extends Seeder
             $designers = Employee::take(3)->get();
         }
 
+        // 0. Seed Global Standard Packages (without contract_id)
+        $standardPackages = [
+            [
+                'package_name' => 'الباقة الفضية',
+                'price' => 300,
+                'monthly_reels' => 4,
+                'monthly_posts' => 4,
+                'monthly_stories' => 8,
+                'boost_reel_cost' => 15,
+                'boost_post_cost' => 10,
+                'boost_story_cost' => 5,
+                'notes' => 'باقة ممتازة للشركات الناشئة للمحافظة على تواجد فعال.',
+            ],
+            [
+                'package_name' => 'الباقة الذهبية',
+                'price' => 600,
+                'monthly_reels' => 8,
+                'monthly_posts' => 8,
+                'monthly_stories' => 15,
+                'boost_reel_cost' => 25,
+                'boost_post_cost' => 15,
+                'boost_story_cost' => 10,
+                'notes' => 'الباقة الأكثر طلباً! تغطية كاملة مع فيديوهات ريلز واحترافية عالية.',
+            ],
+            [
+                'package_name' => 'الباقة الماسية (المخصصة)',
+                'price' => 1200,
+                'monthly_reels' => 15,
+                'monthly_posts' => 15,
+                'monthly_stories' => 30,
+                'boost_reel_cost' => 40,
+                'boost_post_cost' => 20,
+                'boost_story_cost' => 10,
+                'is_custom' => true,
+                'notes' => 'باقة متكاملة للمؤسسات الكبيرة تشمل التمويل والتغطية اليومية.',
+            ],
+        ];
+
+        foreach ($standardPackages as $sp) {
+            SmPackage::updateOrCreate(
+                ['package_name' => $sp['package_name']],
+                $sp
+            );
+        }
+
         // 1. Contract: المخبر (Laboratory)
         $makhbarContract = Contract::whereHas('company', function ($q) {
             $q->where('name', 'like', '%المخبر%');
