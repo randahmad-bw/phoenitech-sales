@@ -73,16 +73,7 @@ class SocialMediaSeeder extends Seeder
         })->first();
 
         if ($makhbarContract) {
-            $package = SmPackage::updateOrCreate(
-                ['contract_id' => $makhbarContract->id],
-                [
-                    'package_name' => 'باقة عقد المخبر',
-                    'monthly_posts' => 6,
-                    'monthly_reels' => 6,
-                    'monthly_stories' => 12,
-                    'notes' => '6 ريل + 6 بوست + 12 ستوري شهرياً',
-                ]
-            );
+            $goldPackage = SmPackage::where('package_name', 'الباقة الذهبية')->first();
 
             $plan = ContentPlan::updateOrCreate(
                 [
@@ -92,7 +83,7 @@ class SocialMediaSeeder extends Seeder
                 ],
                 [
                     'company_id' => $makhbarContract->company_id,
-                    'sm_package_id' => $package->id,
+                    'sm_package_id' => $goldPackage?->id,
                     'status' => 'active',
                     'notes' => 'خطة شهر ' . now()->month . ' لمخبر التحاليل الطبية',
                 ]
@@ -159,23 +150,6 @@ class SocialMediaSeeder extends Seeder
                     'status' => $p['pubd'] ? 'completed' : ($p['designed'] ? 'in_progress' : 'pending'),
                 ]);
             }
-        }
-
-        // Seed packages for other social contracts
-        $otherSocialContracts = Contract::where('category', 'social')
-            ->where('id', '!=', $makhbarContract?->id)
-            ->get();
-
-        foreach ($otherSocialContracts as $sc) {
-            SmPackage::updateOrCreate(
-                ['contract_id' => $sc->id],
-                [
-                    'package_name' => 'باقة ' . ($sc->company?->name ?? 'العقد'),
-                    'monthly_posts' => 6,
-                    'monthly_reels' => 6,
-                    'monthly_stories' => 12,
-                ]
-            );
         }
     }
 }

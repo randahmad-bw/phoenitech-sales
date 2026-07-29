@@ -297,7 +297,7 @@ class ContractService
             'service', 
             'histories', 
             'renewals' => function ($q) {
-                $q->with(['histories', 'employee'])->orderBy('start_date', 'asc');
+                $q->with(['histories', 'employee'])->orderBy('start_date', 'desc')->orderBy('id', 'desc');
             }
         ])->findOrFail($rootId);
 
@@ -306,7 +306,7 @@ class ContractService
             $previousContracts = collect([$rootContract])
                 ->concat($rootContract->renewals)
                 ->where('id', '!=', $id)
-                ->sortBy('start_date')
+                ->sortByDesc('start_date')
                 ->values();
             
             $contract->setRelation('renewals', $previousContracts);
