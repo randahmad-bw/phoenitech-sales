@@ -3,29 +3,45 @@
 namespace App\Application\Services;
 
 use App\Models\Employee;
+use App\Models\EmployeeLeave;
+use App\Models\EmployeeOvertime;
 use App\Helpers\CurrencyHelper;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
- * Handles employee CRUD operations and statistics.
+ * Handles employee CRUD operations, job details, and comprehensive statistics.
  */
 class EmployeeService
 {
     /**
-     * Retrieve paginated employees with optional search filter.
+     * Retrieve paginated employees with optional search filter and relation counts.
      */
     public function list(array $filters = []): LengthAwarePaginator
     {
-        $query = Employee::withCount(['companies', 'contracts']);
+        $query = Employee::withCount(['companies', 'contracts', 'leaves', 'overtimes'])
+            ->withSum(['leaves as approved_leaves_days' => function ($q) {
+                $q->where('status', 'approved')->where('leave_type', 'annual');
+            }], 'days_count')
+            ->withSum(['overtimes as approved_overtime_hours' => function ($q) {
+                $q->where('status', 'approved');
+            }], 'hours')
+            ->withSum(['overtimes as approved_overtime_days' => function ($q) {
+                $q->where('status', 'approved');
+            }], 'days_equivalent');
 
         if (!empty($filters['search'])) {
             $search = $filters['search'];
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%");
+                  ->orWhere('phone', 'like', "%{$search}%")
+                  ->orWhere('job_title', 'like', "%{$search}%");
             });
+        }
+
+        if (!empty($filters['department']) && $filters['department'] !== 'all') {
+            $query->where('department', $filters['department']);
         }
 
         $sortField = $filters['sort'] ?? 'created_at';
@@ -40,18 +56,21 @@ class EmployeeService
      */
     public function create(array $data): Employee
     {
-        if (isset($data['department']) && !\Illuminate\Support\Facades\Schema::hasColumn('employees', 'department')) {
-            unset($data['department']);
-        }
         return Employee::create($data);
     }
 
     /**
-     * Find employee by ID with relation counts loaded.
+     * Find employee by ID with relation counts and detailed info loaded.
      */
     public function find(int $id): Employee
     {
-        return Employee::withCount(['companies', 'contracts'])->findOrFail($id);
+        return Employee::withCount(['companies', 'contracts', 'leaves', 'overtimes'])
+            ->with(['leaves' => function ($q) {
+                $q->orderBy('start_date', 'desc')->take(20);
+            }, 'overtimes' => function ($q) {
+                $q->orderBy('overtime_date', 'desc')->take(20);
+            }])
+            ->findOrFail($id);
     }
 
     /**
@@ -60,9 +79,6 @@ class EmployeeService
     public function update(int $id, array $data): Employee
     {
         $employee = Employee::findOrFail($id);
-        if (isset($data['department']) && !\Illuminate\Support\Facades\Schema::hasColumn('employees', 'department')) {
-            unset($data['department']);
-        }
         $employee->update($data);
         return $employee->fresh();
     }
@@ -82,7 +98,7 @@ class EmployeeService
             return false;
         }
 
-        return $employee->delete();
+        return (bool) $employee->delete();
     }
 
     /**
@@ -90,11 +106,25 @@ class EmployeeService
      */
     public function getStats(int $id): array
     {
-        $employee = Employee::findOrFail($id);
+        $employee = Employee::with(['contracts', 'leaves', 'overtimes'])->findOrFail($id);
 
         $contracts = $employee->contracts;
         $totalValue = $contracts->sum(fn($c) => CurrencyHelper::toUsd((float)$c->contract_value, $c->currency));
         $totalPaid = $contracts->sum(fn($c) => CurrencyHelper::toUsd((float)$c->total_paid, $c->currency));
+
+        $annualAllowance = $employee->annual_leave_allowance ?? 21;
+        $approvedAnnualLeaves = (float) $employee->leaves
+            ->where('leave_type', 'annual')
+            ->where('status', 'approved')
+            ->sum('days_count');
+
+        $totalOvertimeHours = (float) $employee->overtimes
+            ->where('status', 'approved')
+            ->sum('hours');
+
+        $totalOvertimeDays = (float) $employee->overtimes
+            ->where('status', 'approved')
+            ->sum('days_equivalent');
 
         return [
             'total_companies' => $employee->companies()->count(),
@@ -103,6 +133,50 @@ class EmployeeService
             'total_paid' => round($totalPaid, 2),
             'remaining' => round($totalValue - $totalPaid, 2),
             'avg_value' => $contracts->count() > 0 ? round($totalValue / $contracts->count(), 2) : 0,
+            'annual_leave_allowance' => $annualAllowance,
+            'annual_leaves_taken' => $approvedAnnualLeaves,
+            'annual_leaves_remaining' => max(0, $annualAllowance - $approvedAnnualLeaves),
+            'total_overtime_hours' => round($totalOvertimeHours, 2),
+            'total_overtime_days' => round($totalOvertimeDays, 2),
+        ];
+    }
+
+    /**
+     * Get overall company employee statistics (Dashboard header cards).
+     */
+    public function getOverallStats(): array
+    {
+        $totalEmployees = Employee::count();
+
+        $departments = [
+            'design' => Employee::where('department', 'design')->count(),
+            'photography' => Employee::where('department', 'photography')->count(),
+            'sales' => Employee::where('department', 'sales')->count(),
+            'dev' => Employee::where('department', 'dev')->count(),
+            'management' => Employee::where('department', 'management')->count(),
+        ];
+
+        $totalAnnualLeavesTaken = (float) EmployeeLeave::where('leave_type', 'annual')
+            ->where('status', 'approved')
+            ->sum('days_count');
+
+        $totalOvertimeHours = (float) EmployeeOvertime::where('status', 'approved')
+            ->sum('hours');
+
+        $totalOvertimeDays = (float) EmployeeOvertime::where('status', 'approved')
+            ->sum('days_equivalent');
+
+        $pendingLeavesCount = EmployeeLeave::where('status', 'pending')->count();
+        $pendingOvertimeCount = EmployeeOvertime::where('status', 'pending')->count();
+
+        return [
+            'total_employees' => $totalEmployees,
+            'departments' => $departments,
+            'total_annual_leaves_taken' => round($totalAnnualLeavesTaken, 1),
+            'total_overtime_hours' => round($totalOvertimeHours, 1),
+            'total_overtime_days' => round($totalOvertimeDays, 1),
+            'pending_leaves_count' => $pendingLeavesCount,
+            'pending_overtime_count' => $pendingOvertimeCount,
         ];
     }
 }

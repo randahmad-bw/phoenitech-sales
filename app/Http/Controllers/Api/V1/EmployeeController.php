@@ -60,4 +60,13 @@ class EmployeeController extends Controller
         $stats = $this->service->getStats($id);
         return ApiResponse::success($stats, 'Employee stats retrieved.');
     }
+
+    /**
+     * Retrieve overall company employee statistics.
+     */
+    public function overallStats(): JsonResponse
+    {
+        $stats = $this->service->getOverallStats();
+        return ApiResponse::success($stats, 'Overall employee stats retrieved.');
+    }
 }

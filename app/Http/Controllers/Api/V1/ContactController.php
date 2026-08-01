@@ -41,3 +41,4 @@ class ContactController extends Controller
         return ApiResponse::success(null, 'Contact deleted.');
     }
 }
+ 

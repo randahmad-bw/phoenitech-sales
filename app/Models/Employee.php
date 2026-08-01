@@ -15,12 +15,18 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Employee extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'user_id',
         'name',
         'phone',
         'email',
         'department',
+        'job_title',
+        'base_salary',
+        'annual_leave_allowance',
+        'job_description',
+        'responsibilities',
         'employment_date',
     ];
 
@@ -31,6 +37,9 @@ class Employee extends Model
     {
         return [
             'employment_date' => 'date',
+            'base_salary' => 'float',
+            'annual_leave_allowance' => 'integer',
+            'responsibilities' => 'array',
         ];
     }
 
@@ -81,5 +90,62 @@ class Employee extends Model
     {
         return $this->hasMany(PhotoSession::class, 'photographer_id');
     }
+
+    /**
+     * Leaves requested / taken by this employee.
+     */
+    public function leaves(): HasMany
+    {
+        return $this->hasMany(EmployeeLeave::class);
+    }
+
+    /**
+     * Overtime hours / days worked by this employee.
+     */
+    public function overtimes(): HasMany
+    {
+        return $this->hasMany(EmployeeOvertime::class);
+    }
+
+    /**
+     * Calculated total approved annual leave days taken.
+     */
+    public function getApprovedAnnualLeaveDaysAttribute(): float
+    {
+        return (float) $this->leaves()
+            ->where('leave_type', 'annual')
+            ->where('status', 'approved')
+            ->sum('days_count');
+    }
+
+    /**
+     * Calculated remaining annual leave balance.
+     */
+    public function getRemainingLeaveBalanceAttribute(): float
+    {
+        $allowance = $this->annual_leave_allowance ?? 21;
+        return max(0, $allowance - $this->approved_annual_leave_days);
+    }
+
+    /**
+     * Calculated total approved overtime hours.
+     */
+    public function getTotalApprovedOvertimeHoursAttribute(): float
+    {
+        return (float) $this->overtimes()
+            ->where('status', 'approved')
+            ->sum('hours');
+    }
+
+    /**
+     * Calculated total approved overtime equivalent days.
+     */
+    public function getTotalApprovedOvertimeDaysAttribute(): float
+    {
+        return (float) $this->overtimes()
+            ->where('status', 'approved')
+            ->sum('days_equivalent');
+    }
 }
+
 

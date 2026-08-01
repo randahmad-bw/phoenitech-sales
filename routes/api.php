@@ -44,10 +44,24 @@ Route::middleware('auth:sanctum')->group(function () {
     // Dashboard
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Employees
+    // Employees & Overall Stats
+    Route::get('employees/overall-stats', [EmployeeController::class, 'overallStats'])->name('employees.overall-stats');
     Route::match(['put', 'patch', 'post'], 'employees/{employee}', [EmployeeController::class, 'update']);
     Route::apiResource('employees', EmployeeController::class);
     Route::get('employees/{employee}/stats', [EmployeeController::class, 'stats'])->name('employees.stats');
+
+    // Employee Leaves
+    Route::get('employees/{employee}/leaves', [\App\Http\Controllers\Api\V1\EmployeeLeaveController::class, 'index'])->name('employees.leaves.index');
+    Route::post('employees/{employee}/leaves', [\App\Http\Controllers\Api\V1\EmployeeLeaveController::class, 'store'])->name('employees.leaves.store');
+    Route::put('employees/{employee}/leaves/{leave}', [\App\Http\Controllers\Api\V1\EmployeeLeaveController::class, 'update'])->name('employees.leaves.update');
+    Route::delete('employees/{employee}/leaves/{leave}', [\App\Http\Controllers\Api\V1\EmployeeLeaveController::class, 'destroy'])->name('employees.leaves.destroy');
+
+    // Employee Overtimes
+    Route::get('employees/{employee}/overtimes', [\App\Http\Controllers\Api\V1\EmployeeOvertimeController::class, 'index'])->name('employees.overtimes.index');
+    Route::post('employees/{employee}/overtimes', [\App\Http\Controllers\Api\V1\EmployeeOvertimeController::class, 'store'])->name('employees.overtimes.store');
+    Route::put('employees/{employee}/overtimes/{overtime}', [\App\Http\Controllers\Api\V1\EmployeeOvertimeController::class, 'update'])->name('employees.overtimes.update');
+    Route::delete('employees/{employee}/overtimes/{overtime}', [\App\Http\Controllers\Api\V1\EmployeeOvertimeController::class, 'destroy'])->name('employees.overtimes.destroy');
+
 
     // Companies
     Route::apiResource('companies', CompanyController::class);
