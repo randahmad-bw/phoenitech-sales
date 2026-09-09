@@ -25,6 +25,7 @@ class UpdateContractRequest extends BaseFormRequest
             'category'            => ['nullable', 'string', 'in:social,menu,visual_identity,accounting_software,hardware,custom_dev,other'],
             'category_custom'     => ['nullable', 'string', 'max:255'],
             'exchange_rate'       => ['nullable', 'numeric', 'min:0.0001'],
+            'product'             => ['nullable', 'in:phoenitech,onocode,other'],
         ];
     }
 }

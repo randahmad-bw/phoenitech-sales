@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\SocialMedia\ContentPlan;
 use App\Models\SocialMedia\SmPackage;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -33,6 +34,7 @@ class Contract extends Model
         'progress_percentage',
         'category',
         'category_custom',
+        'product',
         'notes',
     ];
 
@@ -176,5 +178,33 @@ class Contract extends Model
         }
 
         return round(($this->total_paid / (float) $this->contract_value) * 100, 2);
+    }
+
+    // ─── Subscription Scopes ─────────────────────────────────────
+
+    /**
+     * Scope to contracts that have an end_date (i.e. are subscriptions).
+     */
+    public function scopeSubscriptions(Builder $query): Builder
+    {
+        return $query->whereNotNull('end_date');
+    }
+
+    /**
+     * Scope to contracts expiring within the given number of days.
+     */
+    public function scopeExpiringSoon(Builder $query, int $days = 30): Builder
+    {
+        return $query->where('status', 'active')
+            ->whereNotNull('end_date')
+            ->whereBetween('end_date', [now()->toDateString(), now()->addDays($days)->toDateString()]);
+    }
+
+    /**
+     * Scope to filter by product/brand.
+     */
+    public function scopeByProduct(Builder $query, string $product): Builder
+    {
+        return $query->where('product', $product);
     }
 }

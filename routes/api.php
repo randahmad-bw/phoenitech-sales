@@ -141,5 +141,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('workload', [$ctrl, 'workload'])->name('sm.workload');
         Route::get('calendar', [$ctrl, 'calendar'])->name('sm.calendar');
     });
+
+    // ─── Subscriptions Module ───
+    Route::prefix('subscriptions')->group(function () {
+        $ctrl = \App\Http\Controllers\Api\V1\SubscriptionController::class;
+        Route::get('dashboard', [$ctrl, 'dashboard'])->name('subscriptions.dashboard');
+        Route::get('/', [$ctrl, 'index'])->name('subscriptions.index');
+    });
 });
 

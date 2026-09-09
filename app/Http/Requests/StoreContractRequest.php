@@ -26,6 +26,7 @@ class StoreContractRequest extends BaseFormRequest
             'category_custom'     => ['nullable', 'string', 'max:255'],
             'initial_payment'     => ['nullable', 'numeric', 'min:0'],
             'exchange_rate'       => ['nullable', 'numeric', 'min:0.0001'],
+            'product'             => ['nullable', 'in:phoenitech,onocode,other'],
         ];
     }
 }

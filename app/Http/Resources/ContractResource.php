@@ -34,6 +34,7 @@ class ContractResource extends JsonResource
             'progress_percentage' => $this->progress_percentage,
             'category' => $this->category,
             'category_custom' => $this->category_custom,
+            'product' => $this->product,
             'notes' => $this->notes,
             'total_paid' => $this->total_paid,
             'remaining_amount' => $this->remaining_amount,
