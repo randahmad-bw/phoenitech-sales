@@ -308,3 +308,40 @@ export interface SubscriptionDashboard {
     onocode: { active: number; expired: number; value: number };
   };
 }
+
+export interface ServerSubscription {
+  id: number;
+  name: string;
+  company_name: string | null;
+  type: 'vps' | 'hosting' | 'domain' | 'email' | 'ssl';
+  domain: string | null;
+  provider: string | null;
+  cost: number;
+  currency: string;
+  start_date: string | null;
+  end_date: string;
+  status: 'active' | 'expiring_soon' | 'expired' | 'cancelled';
+  notes: string | null;
+  is_expiring_soon?: boolean;
+  is_expired?: boolean;
+  days_until_expiration?: number | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ServerSubscriptionDashboard {
+  total: number;
+  active: number;
+  expiring_soon: number;
+  expired: number;
+  by_type: {
+    vps: number;
+    hosting: number;
+    domain: number;
+    email: number;
+    ssl: number;
+  };
+  total_cost: number;
+  companies: string[];
+}
+

@@ -142,11 +142,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('calendar', [$ctrl, 'calendar'])->name('sm.calendar');
     });
 
-    // ─── Subscriptions Module ───
+    // ─── Server Subscriptions Module (Completely separate from Contracts) ───
     Route::prefix('subscriptions')->group(function () {
-        $ctrl = \App\Http\Controllers\Api\V1\SubscriptionController::class;
+        $ctrl = \App\Http\Controllers\Api\V1\ServerSubscriptionController::class;
         Route::get('dashboard', [$ctrl, 'dashboard'])->name('subscriptions.dashboard');
         Route::get('/', [$ctrl, 'index'])->name('subscriptions.index');
+        Route::post('/', [$ctrl, 'store'])->name('subscriptions.store');
+        Route::get('{serverSubscription}', [$ctrl, 'show'])->name('subscriptions.show');
+        Route::put('{serverSubscription}', [$ctrl, 'update'])->name('subscriptions.update');
+        Route::delete('{serverSubscription}', [$ctrl, 'destroy'])->name('subscriptions.destroy');
+        Route::post('{serverSubscription}/renew', [$ctrl, 'renew'])->name('subscriptions.renew');
     });
 });
 

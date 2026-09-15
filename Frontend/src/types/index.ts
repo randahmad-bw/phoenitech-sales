@@ -5,7 +5,7 @@ export type {
   Attachment, DashboardStats, DashboardData, SearchResult, WeeklyReport,
   LeaveType, OvertimeType, StatusType, EmployeeLeave, EmployeeLeaveSummary,
   EmployeeOvertime, EmployeeOvertimeSummary, EmployeeOverallStats,
-  SubscriptionDashboard
+  SubscriptionDashboard, ServerSubscription, ServerSubscriptionDashboard
 } from './models';
 export type {
   SmPackage, ContentPlan, ContentType, ContentStatus, ContentItem,

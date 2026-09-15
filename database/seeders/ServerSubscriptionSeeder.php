@@ -2,87 +2,23 @@
 
 namespace Database\Seeders;
 
-use App\Models\Company;
-use App\Models\Contract;
-use App\Models\Employee;
-use App\Models\Service;
+use App\Models\ServerSubscription;
+use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 
 /**
- * Seeds server/email/domain/VPS/SSL subscriptions as contracts.
+ * Seeds server/email/domain/VPS/SSL infrastructure subscriptions.
  *
  * Data source: https://reports.bw-businessworld.net/subs.html
  *
- * These are infrastructure subscriptions (hosting, domains, emails, VPS, SSL)
- * managed by OnoCode for various clients. Each subscription is stored as a
- * contract with category='hosting' and product='onocode'.
- *
- * Companies seeded here:
- *   - BW Business World          (internal — 9 email subs + 2 domains + 1 VPS)
- *   - Smart Kids Montessori      (3 domains + 1 VPS + 1 hosting)
- *   - Al Reem Smart Kids         (1 hosting + 1 domain)
- *   - Capriani Gelato            (2 hostings + 2 domains + 1 SSL)
- *   - The Travel Tent            (1 domain)
- *   - Karam Safadi               (3 personal domains)
- *   - Cadeau Boutique            (1 domain)
+ * NOTE: This is a completely isolated table ('server_subscriptions').
+ * It has NO relation, foreign keys, or interaction with the 'contracts',
+ * 'companies', or 'clients' tables.
  */
 class ServerSubscriptionSeeder extends Seeder
 {
     public function run(): void
     {
-        // Ensure 'Hosting' service exists (created by ServiceSeeder)
-        $hostingService = Service::where('name_en', 'Hosting')->first();
-        if (!$hostingService) {
-            $hostingService = Service::create([
-                'name_ar' => 'استضافة',
-                'name_en' => 'Hosting',
-            ]);
-        }
-
-        // Find admin employee for assignment
-        $admin = Employee::where('name', 'like', 'الإدارة%')->first();
-        $adminId = $admin?->id;
-
-        // ── Company mapping ────────────────────────────────────────
-        // Group subscriptions by owner company based on domain names.
-        $companiesMap = [
-            'BW Business World' => [
-                'activity' => 'خدمات أعمال',
-            ],
-            'Smart Kids Montessori' => [
-                'activity' => 'تعليم',
-            ],
-            'Al Reem Smart Kids' => [
-                'activity' => 'تعليم',
-            ],
-            'Capriani Gelato' => [
-                'activity' => 'مطعم آيسكريم',
-            ],
-            'The Travel Tent' => [
-                'activity' => 'سياحة وسفر',
-            ],
-            'Karam Safadi' => [
-                'activity' => 'شخصي',
-            ],
-            'Cadeau Boutique' => [
-                'activity' => 'متجر هدايا',
-            ],
-        ];
-
-        $companies = [];
-        foreach ($companiesMap as $name => $data) {
-            $companies[$name] = Company::updateOrCreate(
-                ['name' => $name],
-                [
-                    'activity'    => $data['activity'],
-                    'employee_id' => $adminId,
-                ]
-            );
-        }
-
-        // ── Subscriptions data from the dashboard ──────────────────
-        // Each entry maps to a contract. 'company' key links to the
-        // company created above. 'notes' contains the service name + domain/email.
         $subscriptions = [
             // ─── VPS ───────────────────────────────────────────────
             [
@@ -90,6 +26,7 @@ class ServerSubscriptionSeeder extends Seeder
                 'name'       => 'Managed Linux VPS L',
                 'type'       => 'vps',
                 'domain'     => 'server.bw-businessworld.net',
+                'provider'   => 'GoDaddy',
                 'end_date'   => '2026-06-06',
             ],
             [
@@ -97,6 +34,7 @@ class ServerSubscriptionSeeder extends Seeder
                 'name'       => 'Soar 32',
                 'type'       => 'vps',
                 'domain'     => 'server.smartkidsmontessori.com',
+                'provider'   => 'GoDaddy',
                 'end_date'   => '2025-12-21',
             ],
 
@@ -106,6 +44,7 @@ class ServerSubscriptionSeeder extends Seeder
                 'name'       => 'Turbo Boost Web Hosting',
                 'type'       => 'hosting',
                 'domain'     => 'smartkidsmontessori.net',
+                'provider'   => 'GoDaddy',
                 'end_date'   => '2026-09-24',
             ],
             [
@@ -113,6 +52,7 @@ class ServerSubscriptionSeeder extends Seeder
                 'name'       => 'Web Hosting Plus (AutoSSL)',
                 'type'       => 'hosting',
                 'domain'     => 'alreemsmartkids.com',
+                'provider'   => 'GoDaddy',
                 'end_date'   => '2025-11-04',
             ],
             [
@@ -120,6 +60,7 @@ class ServerSubscriptionSeeder extends Seeder
                 'name'       => 'Web Hosting Deluxe',
                 'type'       => 'hosting',
                 'domain'     => 'caprianigelato.com',
+                'provider'   => 'GoDaddy',
                 'end_date'   => '2026-06-15',
             ],
             [
@@ -127,6 +68,7 @@ class ServerSubscriptionSeeder extends Seeder
                 'name'       => 'Web Hosting Economy',
                 'type'       => 'hosting',
                 'domain'     => 'thecaprigelato.com',
+                'provider'   => 'GoDaddy',
                 'end_date'   => '2026-03-20',
             ],
 
@@ -136,6 +78,7 @@ class ServerSubscriptionSeeder extends Seeder
                 'name'       => 'Domain Registration',
                 'type'       => 'domain',
                 'domain'     => 'bw-businessworld.net',
+                'provider'   => 'GoDaddy',
                 'end_date'   => '2026-06-06',
             ],
             [
@@ -143,6 +86,7 @@ class ServerSubscriptionSeeder extends Seeder
                 'name'       => 'Domain Registration',
                 'type'       => 'domain',
                 'domain'     => 'smartkidsmontessori.net',
+                'provider'   => 'GoDaddy',
                 'end_date'   => '2025-12-11',
             ],
             [
@@ -150,6 +94,7 @@ class ServerSubscriptionSeeder extends Seeder
                 'name'       => 'Domain Registration',
                 'type'       => 'domain',
                 'domain'     => 'smartkidsmontessori.com',
+                'provider'   => 'GoDaddy',
                 'end_date'   => '2026-09-14',
             ],
             [
@@ -157,6 +102,7 @@ class ServerSubscriptionSeeder extends Seeder
                 'name'       => 'Domain Registration',
                 'type'       => 'domain',
                 'domain'     => 'bw-businessworld.com',
+                'provider'   => 'GoDaddy',
                 'end_date'   => '2025-12-28',
             ],
             [
@@ -164,6 +110,7 @@ class ServerSubscriptionSeeder extends Seeder
                 'name'       => 'Domain Registration',
                 'type'       => 'domain',
                 'domain'     => 'alreemsmartkids.com',
+                'provider'   => 'GoDaddy',
                 'end_date'   => '2025-11-05',
             ],
             [
@@ -171,6 +118,7 @@ class ServerSubscriptionSeeder extends Seeder
                 'name'       => 'Domain Registration',
                 'type'       => 'domain',
                 'domain'     => 'montessorismartkids.com',
+                'provider'   => 'GoDaddy',
                 'end_date'   => '2025-11-05',
             ],
             [
@@ -178,6 +126,7 @@ class ServerSubscriptionSeeder extends Seeder
                 'name'       => 'Domain Registration',
                 'type'       => 'domain',
                 'domain'     => 'thecaprigelato.com',
+                'provider'   => 'GoDaddy',
                 'end_date'   => '2026-05-15',
             ],
             [
@@ -185,6 +134,7 @@ class ServerSubscriptionSeeder extends Seeder
                 'name'       => 'Domain Registration',
                 'type'       => 'domain',
                 'domain'     => 'caprianigelato.com',
+                'provider'   => 'GoDaddy',
                 'end_date'   => '2026-01-22',
             ],
             [
@@ -192,6 +142,7 @@ class ServerSubscriptionSeeder extends Seeder
                 'name'       => 'Domain Registration',
                 'type'       => 'domain',
                 'domain'     => 'thetraveltent.net',
+                'provider'   => 'GoDaddy',
                 'end_date'   => '2025-12-14',
             ],
             [
@@ -199,6 +150,7 @@ class ServerSubscriptionSeeder extends Seeder
                 'name'       => 'Domain Registration',
                 'type'       => 'domain',
                 'domain'     => 'karamsafadi.com',
+                'provider'   => 'GoDaddy',
                 'end_date'   => '2025-11-19',
             ],
             [
@@ -206,6 +158,7 @@ class ServerSubscriptionSeeder extends Seeder
                 'name'       => 'Domain Registration',
                 'type'       => 'domain',
                 'domain'     => 'safadiamjad.com',
+                'provider'   => 'GoDaddy',
                 'end_date'   => '2025-11-19',
             ],
             [
@@ -213,6 +166,7 @@ class ServerSubscriptionSeeder extends Seeder
                 'name'       => 'Domain Registration',
                 'type'       => 'domain',
                 'domain'     => 'amjadsafadi.com',
+                'provider'   => 'GoDaddy',
                 'end_date'   => '2025-11-19',
             ],
             [
@@ -220,6 +174,7 @@ class ServerSubscriptionSeeder extends Seeder
                 'name'       => 'Domain Registration',
                 'type'       => 'domain',
                 'domain'     => 'cadeauboutique.com',
+                'provider'   => 'GoDaddy',
                 'end_date'   => '2025-11-30',
             ],
 
@@ -229,6 +184,7 @@ class ServerSubscriptionSeeder extends Seeder
                 'name'       => 'Standard SSL',
                 'type'       => 'ssl',
                 'domain'     => 'caprianigelato.com',
+                'provider'   => 'GoDaddy',
                 'end_date'   => '2026-01-22',
             ],
 
@@ -238,6 +194,7 @@ class ServerSubscriptionSeeder extends Seeder
                 'name'       => 'Microsoft 365 Email Essentials with Security',
                 'type'       => 'email',
                 'domain'     => 'damac@bw-businessworld.com',
+                'provider'   => 'Microsoft 365 / GoDaddy',
                 'end_date'   => '2026-02-04',
             ],
             [
@@ -245,6 +202,7 @@ class ServerSubscriptionSeeder extends Seeder
                 'name'       => 'Microsoft 365 Email Essentials',
                 'type'       => 'email',
                 'domain'     => 'amjad@bw-businessworld.com',
+                'provider'   => 'Microsoft 365 / GoDaddy',
                 'end_date'   => '2026-02-20',
             ],
             [
@@ -252,6 +210,7 @@ class ServerSubscriptionSeeder extends Seeder
                 'name'       => 'Microsoft 365 Email Essentials',
                 'type'       => 'email',
                 'domain'     => 'antoine.haddad@bw-businessworld.com',
+                'provider'   => 'Microsoft 365 / GoDaddy',
                 'end_date'   => '2026-02-20',
             ],
             [
@@ -259,6 +218,7 @@ class ServerSubscriptionSeeder extends Seeder
                 'name'       => 'Microsoft 365 Email Essentials',
                 'type'       => 'email',
                 'domain'     => 'info@bw-businessworld.com',
+                'provider'   => 'Microsoft 365 / GoDaddy',
                 'end_date'   => '2026-02-20',
             ],
             [
@@ -266,6 +226,7 @@ class ServerSubscriptionSeeder extends Seeder
                 'name'       => 'Microsoft 365 Email Essentials',
                 'type'       => 'email',
                 'domain'     => 'eyad@bw-businessworld.com',
+                'provider'   => 'Microsoft 365 / GoDaddy',
                 'end_date'   => '2026-02-20',
             ],
             [
@@ -273,6 +234,7 @@ class ServerSubscriptionSeeder extends Seeder
                 'name'       => 'Microsoft 365 Email Essentials',
                 'type'       => 'email',
                 'domain'     => 'mohd.safadi@bw-businessworld.com',
+                'provider'   => 'Microsoft 365 / GoDaddy',
                 'end_date'   => '2026-02-22',
             ],
             [
@@ -280,6 +242,7 @@ class ServerSubscriptionSeeder extends Seeder
                 'name'       => 'Microsoft 365 Email Essentials',
                 'type'       => 'email',
                 'domain'     => 'saher@bw-businessworld.com',
+                'provider'   => 'Microsoft 365 / GoDaddy',
                 'end_date'   => '2026-02-22',
             ],
             [
@@ -287,6 +250,7 @@ class ServerSubscriptionSeeder extends Seeder
                 'name'       => 'Microsoft 365 Email Essentials',
                 'type'       => 'email',
                 'domain'     => 'hr@bw-businessworld.com',
+                'provider'   => 'Microsoft 365 / GoDaddy',
                 'end_date'   => '2026-02-22',
             ],
             [
@@ -294,56 +258,37 @@ class ServerSubscriptionSeeder extends Seeder
                 'name'       => 'Microsoft 365 Email Essentials',
                 'type'       => 'email',
                 'domain'     => 'adnan.shammout@bw-businessworld.com',
+                'provider'   => 'Microsoft 365 / GoDaddy',
                 'end_date'   => '2026-09-04',
             ],
         ];
 
-        $year = now()->year;
-        // Start numbering after existing contracts to avoid conflicts
-        $lastContract = Contract::orderByDesc('id')->first();
-        $counter = $lastContract ? $lastContract->id + 100 : 100;
-
         foreach ($subscriptions as $sub) {
-            $company = $companies[$sub['company']] ?? null;
-            if (!$company) {
-                continue;
-            }
-
-            $counter++;
-            $contractNumber = sprintf('SRV-%d-%04d', $year, $counter);
-
-            // Calculate start_date: 1 year before end_date (annual subs)
-            $endDate = \Carbon\Carbon::parse($sub['end_date']);
+            $endDate = Carbon::parse($sub['end_date']);
             $startDate = $endDate->copy()->subYear();
 
-            // Build descriptive notes: "Service Type | Service Name | domain/email"
-            $typeLabels = [
-                'vps'     => 'VPS',
-                'hosting' => 'استضافة',
-                'domain'  => 'دومين',
-                'email'   => 'بريد إلكتروني',
-                'ssl'     => 'SSL',
-            ];
-            $typeLabel = $typeLabels[$sub['type']] ?? $sub['type'];
-            $notes = "{$typeLabel} | {$sub['name']} | {$sub['domain']}";
+            $status = 'active';
+            if ($endDate->isPast()) {
+                $status = 'expired';
+            } elseif ($endDate->diffInDays(Carbon::today()) <= 30) {
+                $status = 'expiring_soon';
+            }
 
-            Contract::updateOrCreate(
+            ServerSubscription::updateOrCreate(
                 [
-                    'company_id' => $company->id,
-                    'category'   => $sub['type'],
-                    'notes'      => $notes,
+                    'name'         => $sub['name'],
+                    'domain'       => $sub['domain'],
+                    'company_name' => $sub['company'],
                 ],
                 [
-                    'contract_number'     => $contractNumber,
-                    'employee_id'         => $adminId,
-                    'service_id'          => $hostingService->id,
-                    'contract_value'      => 0,
-                    'currency'            => 'USD',
-                    'start_date'          => $startDate->format('Y-m-d'),
-                    'end_date'            => $sub['end_date'],
-                    'status'              => $endDate->isPast() ? 'completed' : 'active',
-                    'progress_percentage' => 0,
-                    'product'             => 'onocode',
+                    'type'         => $sub['type'],
+                    'provider'     => $sub['provider'] ?? 'GoDaddy',
+                    'cost'         => 0.00,
+                    'currency'     => 'USD',
+                    'start_date'   => $startDate->format('Y-m-d'),
+                    'end_date'     => $sub['end_date'],
+                    'status'       => $status,
+                    'notes'        => null,
                 ]
             );
         }
