@@ -22,7 +22,7 @@ class UpdateContractRequest extends BaseFormRequest
             'status'              => ['nullable', 'in:draft,signed,active,completed,cancelled,suspended,renewed'],
             'progress_percentage' => ['nullable', 'integer', 'min:0', 'max:100'],
             'notes'               => ['nullable', 'string'],
-            'category'            => ['nullable', 'string', 'in:social,menu,visual_identity,accounting_software,hardware,custom_dev,other'],
+            'category'            => ['nullable', 'string', 'in:social,menu,visual_identity,accounting_software,hardware,custom_dev,vps,hosting,domain,email,ssl,other'],
             'category_custom'     => ['nullable', 'string', 'max:255'],
             'exchange_rate'       => ['nullable', 'numeric', 'min:0.0001'],
             'product'             => ['nullable', 'in:phoenitech,onocode,other'],

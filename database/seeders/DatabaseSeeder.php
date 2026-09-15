@@ -34,6 +34,7 @@ class DatabaseSeeder extends Seeder
             EmployeeSeeder::class,
             CompanySeeder::class,
             ContractSeeder::class,
+            ServerSubscriptionSeeder::class,
             SocialMediaSeeder::class,
         ]);
     }

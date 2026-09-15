@@ -1,17 +1,23 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { subscriptionApi, contractApi, serviceApi } from '@/api';
 import { employeeApi } from '@/api/employees';
 import { companyApi } from '@/api/companies';
+import { useSubscriptionMutations } from '@/hooks/queries';
 import { Table } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import { Select } from '@/components/ui/Select';
 import { Input } from '@/components/ui/Input';
+import { Modal } from '@/components/ui/Modal';
+import { Textarea } from '@/components/ui/Textarea';
 import { Spinner } from '@/components/ui/Spinner';
 import { formatCurrency, formatDate, cn } from '@/utils';
 import { useTranslation } from 'react-i18next';
 import { useUiStore } from '@/store/uiStore';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import type { Contract, SubscriptionDashboard, Employee, Company, Service } from '@/types';
 import {
   RefreshCcw,
@@ -28,7 +34,12 @@ import {
   Building2,
   Filter,
   RotateCw,
-} from 'lucide-react';
+  Plus,
+  Edit2,
+  Trash2,
+  RefreshCw,
+  MoreVertical,
+}from 'lucide-react';
 
 // ─── HELPERS ────────────────────────────────────────────────────
 
@@ -150,6 +161,111 @@ const StatCard: React.FC<StatCardProps> = ({ icon, label, value, subtitle, accen
   </div>
 );
 
+// ─── ACTION DROPDOWN ────────────────────────────────────────────
+
+const SubscriptionActionDropdown: React.FC<{
+  onView: () => void;
+  onEdit: () => void;
+  onRenew: () => void;
+  onDelete: () => void;
+  isAr: boolean;
+}> = ({ onView, onEdit, onRenew, onDelete, isAr }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const menuRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
+  return (
+    <div className="relative inline-block text-start" ref={menuRef} onClick={(e) => e.stopPropagation()}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-surface-lighter transition-all border border-transparent hover:border-border active:scale-95 shadow-sm"
+        title={isAr ? 'خيارات الإجراءات' : 'Actions Menu'}
+      >
+        <MoreVertical size={18} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute left-0 mt-1 w-48 bg-surface border border-border rounded-xl shadow-2xl z-50 overflow-hidden animate-fade-in py-1.5">
+          <button
+            onClick={() => { setIsOpen(false); onView(); }}
+            className="w-full px-3.5 py-2.5 text-xs font-bold text-text hover:bg-surface-lighter flex items-center gap-2.5 transition-colors"
+          >
+            <Eye size={16} className="text-blue-500" />
+            <span>{isAr ? 'عرض التفاصيل' : 'View Details'}</span>
+          </button>
+
+          <button
+            onClick={() => { setIsOpen(false); onEdit(); }}
+            className="w-full px-3.5 py-2.5 text-xs font-bold text-text hover:bg-surface-lighter flex items-center gap-2.5 transition-colors"
+          >
+            <Edit2 size={16} className="text-primary-400" />
+            <span>{isAr ? 'تعديل الاشتراك' : 'Edit Subscription'}</span>
+          </button>
+
+          <button
+            onClick={() => { setIsOpen(false); onRenew(); }}
+            className="w-full px-3.5 py-2.5 text-xs font-bold text-text hover:bg-surface-lighter flex items-center gap-2.5 transition-colors"
+          >
+            <RefreshCw size={16} className="text-emerald-400" />
+            <span>{isAr ? 'تجديد الاشتراك' : 'Renew Subscription'}</span>
+          </button>
+
+          <div className="border-t border-border/60 my-1" />
+
+          <button
+            onClick={() => { setIsOpen(false); onDelete(); }}
+            className="w-full px-3.5 py-2.5 text-xs font-bold text-danger-500 hover:bg-danger-500/10 flex items-center gap-2.5 transition-colors"
+          >
+            <Trash2 size={16} className="text-danger-500" />
+            <span>{isAr ? 'حذف الاشتراك' : 'Delete Subscription'}</span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── FORM SCHEMAS ───────────────────────────────────────────────
+
+const subscriptionSchema = z.object({
+  company_id:     z.string().min(1, { message: 'يرجى اختيار العميل.' }),
+  employee_id:    z.string().nullable().or(z.literal('')),
+  contract_value: z.string().min(1, { message: 'القيمة مطلوبة.' }),
+  currency:       z.string(),
+  exchange_rate:  z.string().nullable().or(z.literal('')),
+  start_date:     z.string().min(1, { message: 'تاريخ البدء مطلوب.' }),
+  end_date:       z.string().min(1, { message: 'تاريخ الانتهاء مطلوب.' }),
+  status:         z.string(),
+  category:       z.string().min(1, { message: 'نوع الاشتراك مطلوب.' }),
+  product:        z.string(),
+  notes:          z.string().nullable().or(z.literal('')),
+});
+
+const renewSchema = z.object({
+  contract_value: z.string().min(1, { message: 'القيمة مطلوبة.' }),
+  exchange_rate:  z.string().nullable().or(z.literal('')),
+  start_date:     z.string().min(1, { message: 'تاريخ البدء مطلوب.' }),
+  end_date:       z.string().min(1, { message: 'تاريخ الانتهاء مطلوب.' }),
+  category:       z.string().nullable().or(z.literal('')),
+  notes:          z.string().nullable().or(z.literal('')),
+});
+
+type SubscriptionFormFields = z.infer<typeof subscriptionSchema>;
+type RenewFormFields = z.infer<typeof renewSchema>;
+
 // ─── MAIN PAGE COMPONENT ───────────────────────────────────────
 
 export const SubscriptionsPage: React.FC = () => {
@@ -228,6 +344,56 @@ export const SubscriptionsPage: React.FC = () => {
   const subscriptions = listData?.data ?? [];
   const meta = listData?.meta;
 
+  // ── CRUD States ──
+  const { create, update, remove, renew } = useSubscriptionMutations();
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [renewId, setRenewId] = useState<number | null>(null);
+
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<SubscriptionFormFields>({
+    resolver: zodResolver(subscriptionSchema),
+    defaultValues: {
+      company_id: '', employee_id: '', contract_value: '0', currency: 'USD',
+      exchange_rate: '1.0', start_date: '', end_date: '', status: 'active',
+      category: '', product: 'onocode', notes: '',
+    },
+  });
+
+  const selectedCurrency = watch('currency');
+
+  const { register: regRenew, handleSubmit: handleRenewSubmit, reset: resetRenew, formState: { errors: renewErrors } } = useForm<RenewFormFields>({
+    resolver: zodResolver(renewSchema),
+    defaultValues: {
+      contract_value: '0', exchange_rate: '1.0', start_date: '', end_date: '',
+      category: '', notes: '',
+    },
+  });
+
+  const companyOptions = [
+    { value: '', label: isAr ? '— اختر العميل / الشركة —' : '— Select Client / Company —' },
+    ...(companiesData || []).map((c: Company) => ({
+      value: c.id.toString(),
+      label: c.name,
+    })),
+  ];
+
+  const categoryOptions = [
+    { value: '', label: isAr ? '— اختر نوع الاشتراك —' : '— Select Subscription Type —' },
+    { value: 'hosting', label: isAr ? 'استضافة' : 'Hosting' },
+    { value: 'domain', label: isAr ? 'دومين' : 'Domain' },
+    { value: 'vps', label: 'VPS' },
+    { value: 'email', label: isAr ? 'بريد إلكتروني' : 'Email' },
+    { value: 'ssl', label: 'SSL' },
+    { value: 'other', label: isAr ? 'أخرى' : 'Other' },
+  ];
+
+  const getCategoryLabel = (cat?: string | null) => {
+    if (!cat) return '—';
+    const found = categoryOptions.find(o => o.value === cat);
+    return found?.label || cat;
+  };
+
   // ── Handlers ──
   const handleSearch = useCallback(() => {
     setSearch(searchInput);
@@ -244,6 +410,75 @@ export const SubscriptionsPage: React.FC = () => {
     setSearchInput('');
     setPage(1);
   }, []);
+
+  const onSubmit = async (data: SubscriptionFormFields) => {
+    const payload: Record<string, unknown> = {
+      company_id:     parseInt(data.company_id),
+      employee_id:    data.employee_id ? parseInt(data.employee_id) : null,
+      contract_value: parseFloat(data.contract_value),
+      currency:       data.currency,
+      exchange_rate:  data.exchange_rate ? parseFloat(data.exchange_rate) : 1.0,
+      start_date:     data.start_date || null,
+      end_date:       data.end_date || null,
+      status:         data.status,
+      category:       data.category || null,
+      product:        data.product || 'onocode',
+      notes:          data.notes || null,
+    };
+    try {
+      if (editingId) {
+        await update.mutateAsync({ id: editingId, payload });
+      } else {
+        await create.mutateAsync(payload);
+      }
+      setFormOpen(false);
+      setEditingId(null);
+      reset();
+    } catch (_) {}
+  };
+
+  const handleEdit = (contract: Contract) => {
+    setEditingId(contract.id);
+    setValue('company_id', (contract.company_id ?? contract.company?.id)?.toString() || '');
+    setValue('employee_id', (contract.employee_id ?? contract.employee?.id)?.toString() || '');
+    setValue('contract_value', contract.contract_value ? contract.contract_value.toString() : '0');
+    setValue('currency', contract.currency || 'USD');
+    setValue('exchange_rate', contract.exchange_rate ? contract.exchange_rate.toString() : '1.0');
+    setValue('start_date', contract.start_date ? contract.start_date.substring(0, 10) : '');
+    setValue('end_date', contract.end_date ? contract.end_date.substring(0, 10) : '');
+    setValue('status', contract.status || 'active');
+    setValue('category', contract.category || '');
+    setValue('product', contract.product || 'onocode');
+    setValue('notes', contract.notes || '');
+    setFormOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteId) return;
+    try {
+      await remove.mutateAsync(deleteId);
+      setDeleteId(null);
+    } catch (_) {}
+  };
+
+  const onRenewSubmit = async (data: RenewFormFields) => {
+    if (!renewId) return;
+    try {
+      await renew.mutateAsync({
+        id: renewId,
+        payload: {
+          contract_value: parseFloat(data.contract_value),
+          exchange_rate: data.exchange_rate ? parseFloat(data.exchange_rate) : 1.0,
+          start_date: data.start_date,
+          end_date: data.end_date,
+          category: data.category || null,
+          notes: data.notes || null,
+        },
+      });
+      setRenewId(null);
+      resetRenew();
+    } catch (_) {}
+  };
 
   // ── Table Columns ──
   const columns = useMemo(() => [
@@ -363,6 +598,19 @@ export const SubscriptionsPage: React.FC = () => {
         );
       },
     },
+    {
+      key: 'actions',
+      header: isAr ? 'إجراءات' : 'Actions',
+      render: (row: Contract) => (
+        <SubscriptionActionDropdown
+          isAr={isAr}
+          onView={() => window.open(`/contracts?show=${row.id}`, '_self')}
+          onEdit={() => handleEdit(row)}
+          onRenew={() => setRenewId(row.id)}
+          onDelete={() => setDeleteId(row.id)}
+        />
+      ),
+    },
   ], [isAr, language]);
 
   // ── Product tab buttons ──
@@ -406,6 +654,15 @@ export const SubscriptionsPage: React.FC = () => {
               </button>
             ))}
           </div>
+
+          {/* Add Button */}
+          <button
+            onClick={() => { setEditingId(null); reset(); setFormOpen(true); }}
+            className="flex items-center gap-2 bg-white text-primary-700 px-5 py-2.5 rounded-xl text-sm font-bold shadow-md hover:shadow-lg transition-all hover:scale-105 active:scale-95 cursor-pointer"
+          >
+            <Plus size={18} />
+            {isAr ? 'إضافة اشتراك' : 'Add Subscription'}
+          </button>
         </div>
       </div>
 
@@ -656,6 +913,225 @@ export const SubscriptionsPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* ─── CREATE / EDIT MODAL ─────────────────────────── */}
+      <Modal
+        isOpen={formOpen}
+        onClose={() => { setFormOpen(false); setEditingId(null); reset(); }}
+        title={editingId ? (isAr ? 'تعديل الاشتراك' : 'Edit Subscription') : (isAr ? 'إضافة اشتراك جديد' : 'Add Subscription')}
+        size="lg"
+      >
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Company */}
+            <div>
+              <label className="block text-xs font-semibold text-text-muted mb-1">{isAr ? 'الشركة' : 'Company'} *</label>
+              <select {...register('company_id')} className="input-field w-full text-sm">
+                {companyOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+              {errors.company_id && <p className="text-xs text-danger-500 mt-1">{errors.company_id.message}</p>}
+            </div>
+
+            {/* Employee */}
+            <div>
+              <label className="block text-xs font-semibold text-text-muted mb-1">{isAr ? 'المسؤول' : 'Employee'}</label>
+              <select {...register('employee_id')} className="input-field w-full text-sm">
+                <option value="">{isAr ? '— اختر —' : '— Select —'}</option>
+                {(employeesData || []).map((e: Employee) => <option key={e.id} value={e.id}>{e.name}</option>)}
+              </select>
+            </div>
+
+            {/* Category (Subscription Type) */}
+            <div>
+              <label className="block text-xs font-semibold text-text-muted mb-1">{isAr ? 'نوع الاشتراك' : 'Subscription Type'} *</label>
+              <select {...register('category')} className="input-field w-full text-sm">
+                {categoryOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+              {errors.category && <p className="text-xs text-danger-500 mt-1">{errors.category.message}</p>}
+            </div>
+
+            {/* Product */}
+            <div>
+              <label className="block text-xs font-semibold text-text-muted mb-1">{isAr ? 'المنتج' : 'Product'}</label>
+              <select {...register('product')} className="input-field w-full text-sm">
+                <option value="phoenitech">PhoeniTech</option>
+                <option value="onocode">OnoCode</option>
+                <option value="other">{isAr ? 'أخرى' : 'Other'}</option>
+              </select>
+            </div>
+
+            {/* Value */}
+            <div>
+              <label className="block text-xs font-semibold text-text-muted mb-1">{isAr ? 'القيمة' : 'Value'} *</label>
+              <Input {...register('contract_value')} type="number" step="0.01" />
+              {errors.contract_value && <p className="text-xs text-danger-500 mt-1">{errors.contract_value.message}</p>}
+            </div>
+
+            {/* Currency */}
+            <div>
+              <label className="block text-xs font-semibold text-text-muted mb-1">{isAr ? 'العملة' : 'Currency'}</label>
+              <select {...register('currency')} className="input-field w-full text-sm">
+                <option value="USD">USD</option>
+                <option value="SYP">SYP</option>
+                <option value="TRY">TRY</option>
+                <option value="EUR">EUR</option>
+              </select>
+            </div>
+
+            {selectedCurrency !== 'USD' && (
+              <div>
+                <label className="block text-xs font-semibold text-text-muted mb-1">{isAr ? 'سعر الصرف' : 'Exchange Rate'}</label>
+                <Input {...register('exchange_rate')} type="number" step="0.0001" />
+              </div>
+            )}
+
+            {/* Start Date */}
+            <div>
+              <label className="block text-xs font-semibold text-text-muted mb-1">{isAr ? 'تاريخ البدء' : 'Start Date'} *</label>
+              <Input {...register('start_date')} type="date" />
+              {errors.start_date && <p className="text-xs text-danger-500 mt-1">{errors.start_date.message}</p>}
+            </div>
+
+            {/* End Date */}
+            <div>
+              <label className="block text-xs font-semibold text-text-muted mb-1">{isAr ? 'تاريخ الانتهاء' : 'End Date'} *</label>
+              <Input {...register('end_date')} type="date" />
+              {errors.end_date && <p className="text-xs text-danger-500 mt-1">{errors.end_date.message}</p>}
+            </div>
+
+            {/* Status */}
+            <div>
+              <label className="block text-xs font-semibold text-text-muted mb-1">{isAr ? 'الحالة' : 'Status'}</label>
+              <select {...register('status')} className="input-field w-full text-sm">
+                <option value="active">{isAr ? 'نشط' : 'Active'}</option>
+                <option value="draft">{isAr ? 'مسودة' : 'Draft'}</option>
+                <option value="signed">{isAr ? 'موقع' : 'Signed'}</option>
+                <option value="completed">{isAr ? 'مكتمل' : 'Completed'}</option>
+                <option value="cancelled">{isAr ? 'ملغي' : 'Cancelled'}</option>
+                <option value="suspended">{isAr ? 'معلق' : 'Suspended'}</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label className="block text-xs font-semibold text-text-muted mb-1">{isAr ? 'ملاحظات' : 'Notes'}</label>
+            <Textarea {...register('notes')} rows={3} placeholder={isAr ? 'اسم الخدمة | الدومين / الإيميل...' : 'Service name | Domain / Email...'} />
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button
+              type="submit"
+              disabled={create.isPending || update.isPending}
+              className="btn-primary flex-1 py-2.5 text-sm font-bold rounded-lg disabled:opacity-50"
+            >
+              {(create.isPending || update.isPending)
+                ? (isAr ? 'جاري الحفظ...' : 'Saving...')
+                : editingId
+                  ? (isAr ? 'تحديث الاشتراك' : 'Update Subscription')
+                  : (isAr ? 'إضافة الاشتراك' : 'Add Subscription')
+              }
+            </button>
+            <button
+              type="button"
+              onClick={() => { setFormOpen(false); setEditingId(null); reset(); }}
+              className="px-6 py-2.5 text-sm font-bold rounded-lg border border-border text-text-muted hover:bg-surface-lighter transition-colors"
+            >
+              {isAr ? 'إلغاء' : 'Cancel'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ─── DELETE CONFIRMATION MODAL ────────────────────── */}
+      <Modal
+        isOpen={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        title={isAr ? 'تأكيد الحذف' : 'Confirm Deletion'}
+        size="sm"
+      >
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 mx-auto rounded-full bg-danger-bg flex items-center justify-center">
+            <Trash2 size={28} className="text-danger-500" />
+          </div>
+          <p className="text-sm text-text-muted">
+            {isAr ? 'هل أنت متأكد من حذف هذا الاشتراك؟ لا يمكن التراجع عن هذا الإجراء.' : 'Are you sure you want to delete this subscription? This action cannot be undone.'}
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={handleDeleteConfirm}
+              disabled={remove.isPending}
+              className="flex-1 py-2.5 text-sm font-bold rounded-lg bg-danger-500 text-white hover:bg-danger-600 transition-colors disabled:opacity-50"
+            >
+              {remove.isPending ? (isAr ? 'جاري الحذف...' : 'Deleting...') : (isAr ? 'حذف' : 'Delete')}
+            </button>
+            <button
+              onClick={() => setDeleteId(null)}
+              className="flex-1 py-2.5 text-sm font-bold rounded-lg border border-border text-text-muted hover:bg-surface-lighter transition-colors"
+            >
+              {isAr ? 'إلغاء' : 'Cancel'}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ─── RENEW MODAL ─────────────────────────────────── */}
+      <Modal
+        isOpen={renewId !== null}
+        onClose={() => { setRenewId(null); resetRenew(); }}
+        title={isAr ? 'تجديد الاشتراك' : 'Renew Subscription'}
+        size="md"
+      >
+        <form onSubmit={handleRenewSubmit(onRenewSubmit)} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-text-muted mb-1">{isAr ? 'القيمة الجديدة' : 'New Value'} *</label>
+              <Input {...regRenew('contract_value')} type="number" step="0.01" />
+              {renewErrors.contract_value && <p className="text-xs text-danger-500 mt-1">{renewErrors.contract_value.message}</p>}
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-text-muted mb-1">{isAr ? 'سعر الصرف' : 'Exchange Rate'}</label>
+              <Input {...regRenew('exchange_rate')} type="number" step="0.0001" />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-text-muted mb-1">{isAr ? 'تاريخ البدء' : 'Start Date'} *</label>
+              <Input {...regRenew('start_date')} type="date" />
+              {renewErrors.start_date && <p className="text-xs text-danger-500 mt-1">{renewErrors.start_date.message}</p>}
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-text-muted mb-1">{isAr ? 'تاريخ الانتهاء' : 'End Date'} *</label>
+              <Input {...regRenew('end_date')} type="date" />
+              {renewErrors.end_date && <p className="text-xs text-danger-500 mt-1">{renewErrors.end_date.message}</p>}
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-text-muted mb-1">{isAr ? 'نوع الاشتراك' : 'Type'}</label>
+              <select {...regRenew('category')} className="input-field w-full text-sm">
+                {categoryOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-text-muted mb-1">{isAr ? 'ملاحظات' : 'Notes'}</label>
+            <Textarea {...regRenew('notes')} rows={2} />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button
+              type="submit"
+              disabled={renew.isPending}
+              className="btn-primary flex-1 py-2.5 text-sm font-bold rounded-lg disabled:opacity-50"
+            >
+              {renew.isPending ? (isAr ? 'جاري التجديد...' : 'Renewing...') : (isAr ? 'تجديد' : 'Renew')}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setRenewId(null); resetRenew(); }}
+              className="px-6 py-2.5 text-sm font-bold rounded-lg border border-border text-text-muted hover:bg-surface-lighter transition-colors"
+            >
+              {isAr ? 'إلغاء' : 'Cancel'}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

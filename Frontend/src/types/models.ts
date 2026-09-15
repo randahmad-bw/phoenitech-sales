@@ -191,6 +191,7 @@ export interface Contract {
   payments?: Payment[];
   attachments?: Attachment[];
   renewals?: Contract[];
+  renewals_count?: number;
   histories?: ContractHistory[];
   created_at: string;
 }
