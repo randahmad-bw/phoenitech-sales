@@ -30,6 +30,35 @@ class RoleManagementTest extends TestCase
         return $user;
     }
 
+    /**
+     * Regression: `withCount('users')` resolves spatie's users() relation from
+     * a fresh Role instance, whose guard defaults to the request's guard. Under
+     * auth:sanctum that is "sanctum", which has no provider in config/auth.php,
+     * so the relation used to be built against a null model and threw a 500.
+     *
+     * @test
+     */
+    public function it_lists_roles_with_their_permissions_and_user_counts()
+    {
+        $this->actingAs($this->admin(), 'sanctum')
+            ->getJson('/api/v1/roles')
+            ->assertStatus(200)
+            ->assertJsonStructure(['data' => [['id', 'name', 'is_system', 'users_count', 'permissions']]])
+            ->assertJsonFragment(['name' => 'super_admin', 'is_system' => true]);
+    }
+
+    /** @test */
+    public function it_shows_a_single_role_with_its_user_count()
+    {
+        $role = Role::findByName('manager');
+
+        $this->actingAs($this->admin(), 'sanctum')
+            ->getJson("/api/v1/roles/{$role->id}")
+            ->assertStatus(200)
+            ->assertJsonPath('data.name', 'manager')
+            ->assertJsonPath('data.users_count', 0);
+    }
+
     /** @test */
     public function it_returns_the_grouped_permission_catalog()
     {

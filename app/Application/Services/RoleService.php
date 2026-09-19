@@ -25,12 +25,27 @@ class RoleService
 
     public function list(): Collection
     {
-        return Role::with('permissions')->withCount('users')->orderBy('id')->get();
+        return $this->query()->with('permissions')->withCount('users')->orderBy('id')->get();
     }
 
     public function find(int $id): Role
     {
-        return Role::with('permissions')->withCount('users')->findOrFail($id);
+        return $this->query()->with('permissions')->withCount('users')->findOrFail($id);
+    }
+
+    /**
+     * A Role query whose model already carries the stored guard.
+     *
+     * `withCount('users')` resolves spatie's `users()` relation from a *fresh*
+     * Role instance, and that relation's target model is looked up from the
+     * instance's `guard_name`. During a request the auth:sanctum middleware has
+     * rewritten the default guard to "sanctum", which has no provider entry in
+     * config/auth.php — so the relation would be built against a null model
+     * class and blow up. Seeding the guard here keeps it pointed at User.
+     */
+    private function query(): \Illuminate\Database\Eloquent\Builder
+    {
+        return (new Role(['guard_name' => $this->guard()]))->newQuery();
     }
 
     /**
