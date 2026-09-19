@@ -20,25 +20,43 @@ import {
   Building2,
   Megaphone,
   RefreshCcw,
+  ShieldCheck,
+  UserCog,
+  ScrollText,
 } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
 
 export const Sidebar: React.FC = () => {
   const { theme, sidebarOpen, language, toggleSidebar, toggleLanguage, toggleTheme } = useUiStore();
   const { logout, user } = useAuthStore();
   const { t } = useTranslation();
+  const { can } = usePermissions();
   const isRtl = language === 'ar';
 
+  // `permission` mirrors the middleware on the matching API route. Omitting it
+  // means the entry is open to any authenticated user (dashboard, settings).
+  // The list is filtered below — hiding a link the account cannot open.
   const menuItems = [
     { to: '/',               label: t('nav.dashboard', 'لوحة التحكم'),      icon: LayoutDashboard },
-    { to: '/contracts',      label: t('nav.contracts', 'العقود'),           icon: FileText },
-    { to: '/subscriptions',  label: t('nav.subscriptions', 'الاشتراكات'),   icon: RefreshCcw },
-    { to: '/reports',        label: t('nav.reports',   'التقارير'),         icon: BarChart3 },
-    { to: '/weekly-reports', label: t('nav.weekly_reports', 'التقارير الأسبوعية'), icon: ClipboardList },
-    { to: '/social-media',   label: t('nav.social_media', 'إدارة السوشال ميديا'), icon: Megaphone },
-    { to: '/employees',      label: t('nav.employees', 'الموظفون'),         icon: Users },
-    { to: '/clients',        label: t('nav.clients', 'عملاؤنا'),             icon: Building2 },
+    { to: '/contracts',      label: t('nav.contracts', 'العقود'),           icon: FileText,       permission: ['contracts.view_all', 'contracts.view_own'] },
+    { to: '/subscriptions',  label: t('nav.subscriptions', 'الاشتراكات'),   icon: RefreshCcw,     permission: 'subscriptions.view' },
+    { to: '/reports',        label: t('nav.reports',   'التقارير'),         icon: BarChart3,      permission: 'reports.view' },
+    { to: '/weekly-reports', label: t('nav.weekly_reports', 'التقارير الأسبوعية'), icon: ClipboardList, permission: ['weekly_reports.view_all', 'weekly_reports.view_own'] },
+    { to: '/social-media',   label: t('nav.social_media', 'إدارة السوشال ميديا'), icon: Megaphone, permission: 'social_media.view' },
+    { to: '/employees',      label: t('nav.employees', 'الموظفون'),         icon: Users,          permission: ['employees.view_all', 'employees.view_own'] },
+    { to: '/clients',        label: t('nav.clients', 'عملاؤنا'),             icon: Building2,      permission: 'companies.view' },
     { to: '/settings',       label: t('nav.settings',  'الإعدادات'),       icon: SettingsIcon },
   ];
+
+  // System administration — its own section so it does not crowd daily work.
+  const adminItems = [
+    { to: '/users',      label: t('nav.users', 'المستخدمون'),       icon: UserCog,     permission: 'users.view' },
+    { to: '/roles',      label: t('nav.roles', 'الأدوار والصلاحيات'), icon: ShieldCheck, permission: 'roles.view' },
+    { to: '/audit-logs', label: t('nav.audit_logs', 'سجل التدقيق'),  icon: ScrollText,  permission: 'audit.view' },
+  ];
+
+  const visibleMenu = menuItems.filter((item) => !item.permission || can(item.permission));
+  const visibleAdmin = adminItems.filter((item) => can(item.permission));
 
   return (
     <aside
@@ -77,7 +95,7 @@ export const Sidebar: React.FC = () => {
 
       {/* Navigation Items */}
       <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
-        {menuItems.map((item) => {
+        {visibleMenu.map((item) => {
           const Icon = item.icon;
           return (
             <NavLink
@@ -105,6 +123,48 @@ export const Sidebar: React.FC = () => {
             </NavLink>
           );
         })}
+
+        {visibleAdmin.length > 0 && (
+          <div className="pt-4">
+            <div className="mb-1 px-3">
+              {sidebarOpen ? (
+                <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted/70 select-none">
+                  {t('nav.administration', 'إدارة النظام')}
+                </span>
+              ) : (
+                <div className="mx-auto h-px w-8 bg-border" />
+              )}
+            </div>
+
+            {visibleAdmin.map((item) => {
+              const Icon = item.icon;
+              return (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={({ isActive }) =>
+                    cn(
+                      'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 cursor-pointer',
+                      isActive
+                        ? 'bg-primary-bg text-primary-text border-s-2 border-primary-500 ps-2.5 font-semibold'
+                        : 'hover:bg-surface-lighter hover:text-text'
+                    )
+                  }
+                >
+                  <Icon size={18} className="shrink-0" />
+                  <span
+                    className={cn(
+                      'transition-opacity duration-300 whitespace-nowrap',
+                      sidebarOpen ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'
+                    )}
+                  >
+                    {item.label}
+                  </span>
+                </NavLink>
+              );
+            })}
+          </div>
+        )}
       </nav>
 
       {/* Footer */}

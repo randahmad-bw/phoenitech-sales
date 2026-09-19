@@ -1,7 +1,15 @@
 export interface User {
   id: number;
   name: string;
+  username: string | null;
   email: string;
+  is_active: boolean;
+  /** Set by an admin password reset — the UI must force a change before anything else. */
+  must_change_password: boolean;
+  /** Role names, e.g. `['manager']`. */
+  roles: string[];
+  /** Flattened permission names from every role plus any direct grants. */
+  permissions: string[];
   employee: Employee | null;
   created_at: string;
 }

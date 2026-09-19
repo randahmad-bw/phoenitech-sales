@@ -5,6 +5,8 @@ export { employeeApi } from './employees';
 export { companyApi } from './companies';
 export { smApi } from './social-media';
 export { subscriptionApi } from './subscriptions';
+export { userApi, roleApi, auditApi } from './access';
+export type { UserPayload, RolePayload } from './access';
 
 export const contractApi = {
   list: (params?: Record<string, unknown>) => api.get<PaginatedResponse<Contract>>('/contracts', { params }),

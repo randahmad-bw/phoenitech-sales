@@ -11,3 +11,7 @@ export type {
   SmPackage, ContentPlan, ContentType, ContentStatus, ContentItem,
   SessionStatus, PhotoSession, SmDashboardStats
 } from './social-media';
+export type {
+  PermissionName, PermissionCatalog, Role, AdminUser,
+  AuditEvent, AuditChange, AuditLogEntry, AuditFilterOptions
+} from './access';

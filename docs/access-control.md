@@ -217,8 +217,8 @@ tests/Feature/AuditLogTest.php
 
 ## 11. Pending / open
 - Dashboard (`/dashboard`) is open to any authenticated user and exposes company financials — needs a per-role scoping decision.
-- Phase 6: Frontend access control — route guards, `<Can>` component, sidebar filtering, 403 page, change-password UI, Users/Roles admin screens, the audit-trail screen, force `must_change_password`.
 - Give login accounts to profile-only employees (design/photography) before the attendance module.
+- The frontend lives outside this repository (`.gitignore` excludes `Frontend/`); only its build is deployed.
 
 ---
 
@@ -262,3 +262,52 @@ php artisan audit:prune --days=365   # scheduled weekly, Mon 01:30
 ```
 In code, `AuditLogger::withoutAuditing(fn () => ...)` silences a block (used by imports and tests) and restores the previous state even if the callback throws.
 ```
+
+---
+
+## 13. Frontend access control (Phase 6)
+
+The UI mirrors the backend rules so people are not shown doors they cannot open.
+**None of it is a security boundary** — every gate below is cosmetic, and the
+`permission:` middleware on the API route remains the only thing that actually
+protects data.
+
+### Where permissions come from
+`GET /auth/me` returns `roles` and the flattened `permissions` list
+(`UserResource`). `authStore` keeps them on `user` and exposes `can`, `canAll`
+and `hasRole`; `super_admin` short-circuits to `true`, mirroring `Gate::before`.
+
+`isInitialized` guards the whole thing: it stays `false` until the first
+`/auth/me` settles. Without it a page refresh would evaluate permissions against
+an empty profile and bounce a legitimate user to `/403`.
+
+### The pieces
+| Piece | File | What it does |
+|---|---|---|
+| Store helpers | `store/authStore.ts` | `can` / `canAll` / `hasRole`, `changePassword`, `isInitialized` |
+| Reactive hook | `hooks/usePermissions.ts` | subscribes to `user` — use this inside components |
+| `<Can do="...">` | `components/auth/Can.tsx` | renders children only if permitted; `do` accepts an array (any-of), `all` switches to every-of |
+| Route guard | `components/auth/RequirePermission.tsx` | layout route → `/403` when denied, spinner until the profile loads |
+| 403 page | `pages/ForbiddenPage.tsx` | deliberately vague about what sits behind the wall |
+| Sidebar | `components/layout/Sidebar.tsx` | each entry carries the matching permission; the admin group is its own section |
+| Forced change | `pages/ForcePasswordChangePage.tsx` | full-screen gate while `must_change_password` is set — only sign-out escapes it |
+
+### Screens
+- **`/users`** (`users.view`) — list, search, filter by role and status; create,
+  edit, activate/disable, reset password, delete. Self-deactivation and
+  self-deletion are disabled in the UI *and* refused by the backend (409); the
+  server's message is surfaced verbatim rather than re-deriving the rule.
+- **`/roles`** (`roles.view`) — role list with user counts plus the permission
+  matrix, grouped with select-all per group. `super_admin` is read-only: it
+  bypasses every check anyway, so editing it would be theatre.
+- **`/audit-logs`** (`audit.view`) — filter by event, record type, actor, date
+  range and free text; a row opens the field-by-field diff with the request
+  context. Read-only, like the API.
+- **Settings** — roles of the signed-in account and the change-password form.
+
+### i18n
+Every string is keyed in `i18n/ar.json` and `i18n/en.json`:
+`access.*`, `roles.*`, `permission_groups.*`, `permissions.<group>.<action>`,
+`audit_events.*`, `audit_types.*`. Permission names carry a dot, so they are
+authored as nested objects — i18next resolves `permissions.users.view` through
+its key separator.

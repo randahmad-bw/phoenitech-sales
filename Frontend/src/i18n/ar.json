@@ -10,7 +10,11 @@
     "yearly_report": "تقرير سنوي",
     "settings": "الإعدادات",
     "social_media": "إدارة السوشال ميديا",
-    "subscriptions": "الاشتراكات"
+    "subscriptions": "الاشتراكات",
+    "users": "المستخدمون",
+    "roles": "الأدوار والصلاحيات",
+    "audit_logs": "سجل التدقيق",
+    "administration": "إدارة النظام"
   },
   "auth": {
     "login": "تسجيل الدخول",
@@ -393,5 +397,218 @@
     "all_employees": "جميع الموظفين",
     "all_companies": "جميع الشركات",
     "all_services": "جميع الخدمات"
+  },
+  "access": {
+    "activate": "تفعيل",
+    "actor": "المستخدم",
+    "add_role": "دور جديد",
+    "add_user": "مستخدم جديد",
+    "all_events": "كل الأحداث",
+    "all_roles": "كل الأدوار",
+    "all_statuses": "كل الحالات",
+    "all_types": "كل السجلات",
+    "all_users": "كل المستخدمين",
+    "audit_subtitle": "من فعل ماذا ومتى. السجل للقراءة فقط ولا يمكن تعديله.",
+    "audit_title": "سجل التدقيق",
+    "back_to_dashboard": "العودة إلى لوحة التحكم",
+    "change_password": "تغيير كلمة المرور",
+    "change_password_desc": "بعد التغيير يتم تسجيل الخروج من كل الأجهزة الأخرى، وتبقى هذه الجلسة مفتوحة.",
+    "changes": "التغييرات",
+    "clear_all": "إلغاء الكل",
+    "confirm_password": "تأكيد كلمة المرور",
+    "current_password": "كلمة المرور الحالية",
+    "date_from": "من",
+    "date_to": "إلى",
+    "deactivate": "تعطيل",
+    "delete_role": "حذف الدور",
+    "delete_role_confirm": "لا يمكن حذف دور مسند إلى مستخدمين. أزل الدور عنهم أولاً.",
+    "delete_user": "حذف المستخدم",
+    "delete_user_confirm": "سيتم حذف حساب الدخول نهائياً. سجل التدقيق يحتفظ باسم المستخدم.",
+    "deleted_account": "حساب محذوف",
+    "edit_user": "تعديل مستخدم",
+    "entry_details": "تفاصيل السجل",
+    "event": "الحدث",
+    "fields_count": "{{total}} حقل",
+    "forbidden_message": "هذه الصفحة محجوبة عن حسابك. إذا كنت تعتقد أن هذا خطأ، تواصل مع مدير النظام.",
+    "forbidden_title": "لا تملك صلاحية الوصول",
+    "force_change": "إجبار تغيير كلمة المرور عند أول دخول",
+    "last_login": "آخر دخول",
+    "must_change_message": "تم تعيين كلمة مرور مؤقتة لحسابك من قبل الإدارة. اختر كلمة مرور جديدة للمتابعة.",
+    "must_change_title": "يجب تغيير كلمة المرور",
+    "new_password": "كلمة المرور الجديدة",
+    "password": "كلمة المرور",
+    "password_changed": "تم تغيير كلمة المرور. تم تسجيل الخروج من باقي الأجهزة.",
+    "password_hint": "8 أحرف على الأقل، وتحتوي على حروف وأرقام.",
+    "password_mismatch": "كلمتا المرور غير متطابقتين",
+    "permissions_count": "{{total}} صلاحية مفعّلة",
+    "record": "السجل",
+    "reset_password": "إعادة تعيين كلمة المرور",
+    "reset_password_note": "سيُطلب من المستخدم تغييرها عند أول دخول، وسيتم تسجيل خروجه من كل الأجهزة.",
+    "role_name": "اسم الدور",
+    "role_name_hint": "أحرف إنجليزية صغيرة وأرقام و _ فقط. الصلاحيات تُحدد بعد الإنشاء.",
+    "roles": "الأدوار",
+    "roles_subtitle": "كل دور يحدد ما يستطيع أصحابه رؤيته وتعديله.",
+    "roles_title": "الأدوار والصلاحيات",
+    "select_all": "تحديد الكل",
+    "status_active": "مُفعّل",
+    "status_disabled": "معطّل",
+    "super_admin_note": "هذا الدور يملك كل الصلاحيات ولا يمكن تعديله أو حذفه.",
+    "system_actor": "النظام",
+    "username": "اسم المستخدم (اختياري)",
+    "users_subtitle": "حسابات الدخول والأدوار المرتبطة بها.",
+    "users_title": "المستخدمون",
+    "when": "التاريخ"
+  },
+  "roles": {
+    "super_admin": "مدير عام",
+    "admin": "مدير النظام",
+    "hr": "الموارد البشرية",
+    "manager": "مدير",
+    "employee": "موظف"
+  },
+  "permission_groups": {
+    "users": "المستخدمون",
+    "roles": "الأدوار",
+    "employees": "الموظفون",
+    "companies": "الشركات",
+    "contracts": "العقود",
+    "payments": "الدفعات",
+    "subscriptions": "الاشتراكات",
+    "social_media": "السوشال ميديا",
+    "leave": "الإجازات",
+    "overtime": "الساعات الإضافية",
+    "reports": "التقارير",
+    "weekly_reports": "التقارير الأسبوعية",
+    "settings": "الإعدادات",
+    "audit": "سجل التدقيق",
+    "attendance": "الحضور والدوام"
+  },
+  "permissions": {
+    "users": {
+      "view": "عرض",
+      "create": "إضافة",
+      "edit": "تعديل",
+      "delete": "حذف",
+      "activate": "تفعيل وتعطيل"
+    },
+    "roles": {
+      "view": "عرض",
+      "create": "إضافة",
+      "edit": "تعديل",
+      "delete": "حذف",
+      "assign_permissions": "إسناد الصلاحيات"
+    },
+    "employees": {
+      "view_all": "عرض الكل",
+      "view_own": "عرض الخاص به",
+      "create": "إضافة",
+      "edit": "تعديل",
+      "delete": "حذف",
+      "view_salary": "عرض الرواتب"
+    },
+    "companies": {
+      "view": "عرض",
+      "create": "إضافة",
+      "edit": "تعديل",
+      "delete": "حذف"
+    },
+    "contracts": {
+      "view_all": "عرض الكل",
+      "view_own": "عرض الخاص به",
+      "create": "إضافة",
+      "edit": "تعديل",
+      "delete": "حذف",
+      "renew": "تجديد"
+    },
+    "payments": {
+      "view": "عرض",
+      "create": "إضافة",
+      "edit": "تعديل",
+      "delete": "حذف"
+    },
+    "subscriptions": {
+      "view": "عرض",
+      "create": "إضافة",
+      "edit": "تعديل",
+      "delete": "حذف",
+      "renew": "تجديد"
+    },
+    "social_media": {
+      "view": "عرض",
+      "create": "إضافة",
+      "edit": "تعديل",
+      "delete": "حذف"
+    },
+    "leave": {
+      "view_all": "عرض الكل",
+      "view_own": "عرض الخاص به",
+      "create": "إضافة",
+      "approve": "موافقة",
+      "reject": "رفض"
+    },
+    "overtime": {
+      "view_all": "عرض الكل",
+      "view_own": "عرض الخاص به",
+      "create": "إضافة",
+      "approve": "موافقة",
+      "reject": "رفض"
+    },
+    "reports": {
+      "view": "عرض",
+      "export": "تصدير"
+    },
+    "weekly_reports": {
+      "view_all": "عرض الكل",
+      "view_own": "عرض الخاص به",
+      "create": "إضافة",
+      "delete": "حذف"
+    },
+    "settings": {
+      "view": "عرض",
+      "edit": "تعديل"
+    },
+    "audit": {
+      "view": "عرض"
+    },
+    "attendance": {
+      "view_all": "عرض الكل",
+      "view_own": "عرض الخاص به",
+      "create": "إضافة",
+      "edit": "تعديل",
+      "delete": "حذف",
+      "approve": "موافقة"
+    }
+  },
+  "audit_events": {
+    "created": "إنشاء",
+    "updated": "تعديل",
+    "deleted": "حذف",
+    "login": "تسجيل دخول",
+    "login_failed": "محاولة دخول فاشلة",
+    "login_blocked": "دخول محظور",
+    "logout": "تسجيل خروج",
+    "password_changed": "تغيير كلمة المرور",
+    "password_reset": "إعادة تعيين كلمة المرور",
+    "roles_changed": "تغيير الأدوار",
+    "permissions_changed": "تغيير الصلاحيات"
+  },
+  "audit_types": {
+    "user": "مستخدم",
+    "employee": "موظف",
+    "company": "شركة",
+    "contact": "جهة اتصال",
+    "contract": "عقد",
+    "payment": "دفعة",
+    "service": "خدمة",
+    "attachment": "مرفق",
+    "weekly_report": "تقرير أسبوعي",
+    "employee_leave": "إجازة",
+    "employee_overtime": "ساعات إضافية",
+    "server_subscription": "اشتراك",
+    "sm_package": "باقة سوشال ميديا",
+    "content_plan": "خطة محتوى",
+    "content_item": "عنصر محتوى",
+    "photo_session": "جلسة تصوير",
+    "role": "دور"
   }
 }
