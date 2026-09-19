@@ -2,6 +2,7 @@
 
 namespace App\Models\SocialMedia;
 
+use App\Models\Concerns\Auditable;
 use App\Models\Company;
 use App\Models\Contract;
 use Illuminate\Database\Eloquent\Model;
@@ -13,6 +14,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class ContentPlan extends Model
 {
+    use Auditable;
+
     protected $table = 'sm_content_plans';
 
     protected $fillable = [

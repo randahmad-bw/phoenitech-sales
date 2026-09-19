@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use App\Models\SocialMedia\ContentPlan;
 use App\Models\SocialMedia\SmPackage;
 use Illuminate\Database\Eloquent\Builder;
@@ -18,7 +19,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
  */
 class Contract extends Model
 {
-    use HasFactory;
+    use Auditable, HasFactory;
     protected $fillable = [
         'parent_contract_id',
         'contract_number',

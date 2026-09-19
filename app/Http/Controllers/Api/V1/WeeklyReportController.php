@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Application\Support\AccessScope;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreWeeklyReportRequest;
 use App\Http\Resources\WeeklyReportCollection;
@@ -22,16 +23,15 @@ class WeeklyReportController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $user = Auth::user();
-        $employee = $user->employee;
-
         $query = WeeklyReport::with('employee');
 
-        if ($employee) {
-            // Employees see only their own reports
-            $query->where('employee_id', $employee->id);
+        // weekly_reports.view_all → every report (with filters); otherwise the
+        // caller is limited to their own reports.
+        $scopeId = AccessScope::ownEmployeeId($request->user(), 'weekly_reports.view_all');
+
+        if ($scopeId !== null) {
+            $query->where('employee_id', $scopeId);
         } else {
-            // Admins can see all, with filters
             if ($request->has('employee_id')) {
                 $query->where('employee_id', $request->integer('employee_id'));
             }
@@ -88,14 +88,12 @@ class WeeklyReportController extends Controller
     /**
      * Display a specific weekly report.
      */
-    public function show(int $id): JsonResponse
+    public function show(Request $request, int $id): JsonResponse
     {
         $report = WeeklyReport::with('employee')->findOrFail($id);
-        $user = Auth::user();
-        $employee = $user->employee;
 
-        // Employees can only view their own reports
-        if ($employee && $report->employee_id !== $employee->id) {
+        // Without weekly_reports.view_all, a user may only view their own report.
+        if (! AccessScope::canAccessEmployee($request->user(), $report->employee_id, 'weekly_reports.view_all')) {
             return ApiResponse::forbidden('You are not authorized to view this report.');
         }
 
@@ -103,17 +101,12 @@ class WeeklyReportController extends Controller
     }
 
     /**
-     * Remove a weekly report. (Admin only)
+     * Remove a weekly report. Authorization is enforced by the
+     * `permission:weekly_reports.delete` middleware on the route.
      */
     public function destroy(int $id): JsonResponse
     {
         $report = WeeklyReport::findOrFail($id);
-        $user = Auth::user();
-
-        if ($user->employee) {
-            return ApiResponse::forbidden('Only administrators can delete weekly reports.');
-        }
-
         $report->delete();
 
         return ApiResponse::success(null, 'Weekly report deleted successfully.');

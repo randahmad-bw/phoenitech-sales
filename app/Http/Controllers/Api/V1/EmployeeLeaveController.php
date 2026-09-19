@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Application\Services\EmployeeLeaveService;
+use App\Application\Support\AccessScope;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -12,8 +13,12 @@ class EmployeeLeaveController extends Controller
 {
     public function __construct(private EmployeeLeaveService $service) {}
 
-    public function index(int $employeeId): JsonResponse
+    public function index(Request $request, int $employeeId): JsonResponse
     {
+        if (! AccessScope::canAccessEmployee($request->user(), $employeeId, 'leave.view_all')) {
+            return ApiResponse::forbidden('You are not authorized to view these leaves.');
+        }
+
         $leaves = $this->service->listByEmployee($employeeId);
         $summary = $this->service->getSummary($employeeId);
         return ApiResponse::success([
@@ -24,6 +29,10 @@ class EmployeeLeaveController extends Controller
 
     public function store(Request $request, int $employeeId): JsonResponse
     {
+        if (! AccessScope::canAccessEmployee($request->user(), $employeeId, 'leave.view_all')) {
+            return ApiResponse::forbidden('You can only submit leave for your own profile.');
+        }
+
         $validated = $request->validate([
             'leave_type' => 'required|in:annual,sick,unpaid,emergency,special',
             'start_date' => 'required|date',

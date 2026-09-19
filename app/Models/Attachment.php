@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -12,7 +13,7 @@ use Illuminate\Support\Facades\Storage;
  */
 class Attachment extends Model
 {
-    use HasFactory;
+    use Auditable, HasFactory;
     protected $fillable = [
         'attachable_type',
         'attachable_id',

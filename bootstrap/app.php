@@ -1,5 +1,6 @@
 <?php
 
+use App\Exceptions\BusinessRuleException;
 use App\Http\Responses\ApiResponse;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -19,8 +20,22 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         // $middleware->statefulApi();
+
+        // Laravel 11+ no longer throttles the api group by default.
+        // Limiter defined in App\Providers\AppServiceProvider.
+        $middleware->throttleApi('api');
+
+        // Route-level authorization aliases.
+        $middleware->alias([
+            'permission' => \App\Http\Middleware\CheckPermission::class,
+            'active' => \App\Http\Middleware\EnsureUserIsActive::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+
+        $exceptions->renderable(function (BusinessRuleException $e) {
+            return ApiResponse::conflict($e->getMessage(), $e->errorCode);
+        });
 
         $exceptions->renderable(function (ValidationException $e) {
             return ApiResponse::validationError(

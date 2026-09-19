@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Application\Services\EmployeeOvertimeService;
+use App\Application\Support\AccessScope;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -12,8 +13,12 @@ class EmployeeOvertimeController extends Controller
 {
     public function __construct(private EmployeeOvertimeService $service) {}
 
-    public function index(int $employeeId): JsonResponse
+    public function index(Request $request, int $employeeId): JsonResponse
     {
+        if (! AccessScope::canAccessEmployee($request->user(), $employeeId, 'overtime.view_all')) {
+            return ApiResponse::forbidden('You are not authorized to view these overtime records.');
+        }
+
         $overtimes = $this->service->listByEmployee($employeeId);
         $summary = $this->service->getSummary($employeeId);
         return ApiResponse::success([
@@ -24,6 +29,10 @@ class EmployeeOvertimeController extends Controller
 
     public function store(Request $request, int $employeeId): JsonResponse
     {
+        if (! AccessScope::canAccessEmployee($request->user(), $employeeId, 'overtime.view_all')) {
+            return ApiResponse::forbidden('You can only submit overtime for your own profile.');
+        }
+
         $validated = $request->validate([
             'overtime_date' => 'required|date',
             'hours' => 'required|numeric|min:0.5|max:24',

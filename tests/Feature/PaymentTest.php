@@ -18,7 +18,9 @@ class PaymentTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->seed(\Database\Seeders\RolePermissionSeeder::class);
         $this->user = User::factory()->create();
+        $this->user->assignRole('super_admin');
         $this->contract = Contract::factory()->create(['contract_value' => 10000.00]);
     }
 

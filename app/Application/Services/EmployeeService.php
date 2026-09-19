@@ -44,6 +44,12 @@ class EmployeeService
             $query->where('department', $filters['department']);
         }
 
+        // Data scoping: when the caller may only view their own record, restrict
+        // the listing to that employee id (set by the controller via AccessScope).
+        if (array_key_exists('self_employee_id', $filters) && $filters['self_employee_id'] !== null) {
+            $query->where('id', $filters['self_employee_id']);
+        }
+
         $sortField = $filters['sort'] ?? 'created_at';
         $sortDir = $filters['direction'] ?? 'desc';
         $perPage = $filters['per_page'] ?? 25;

@@ -2,6 +2,7 @@
 
 namespace App\Models\SocialMedia;
 
+use App\Models\Concerns\Auditable;
 use App\Models\Contract;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,6 +14,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class SmPackage extends Model
 {
+    use Auditable;
+
+    /** Names this package in the audit trail. */
+    protected string $auditLabelAttribute = 'package_name';
+
     protected $fillable = [
         'contract_id',
         'package_name',

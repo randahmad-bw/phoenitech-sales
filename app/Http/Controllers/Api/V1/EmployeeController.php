@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Application\Services\EmployeeService;
+use App\Application\Support\AccessScope;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreEmployeeRequest;
 use App\Http\Requests\UpdateEmployeeRequest;
@@ -21,7 +22,11 @@ class EmployeeController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $employees = $this->service->list($request->all());
+        $filters = $request->all();
+        // Users without employees.view_all see only their own profile.
+        $filters['self_employee_id'] = AccessScope::ownEmployeeId($request->user(), 'employees.view_all');
+
+        $employees = $this->service->list($filters);
         return ApiResponse::paginated(new EmployeeCollection($employees));
     }
 
@@ -31,8 +36,13 @@ class EmployeeController extends Controller
         return ApiResponse::created(new EmployeeResource($employee), 'Employee created.');
     }
 
-    public function show(int $id): JsonResponse
+    public function show(Request $request, int $id): JsonResponse
     {
+        // Without employees.view_all, a user may only view their own profile.
+        if (! AccessScope::canAccessEmployee($request->user(), $id, 'employees.view_all')) {
+            return ApiResponse::forbidden('You are not authorized to view this employee.');
+        }
+
         $employee = $this->service->find($id);
         return ApiResponse::success(new EmployeeResource($employee));
     }
@@ -55,8 +65,12 @@ class EmployeeController extends Controller
     /**
      * Retrieve per-employee aggregated statistics.
      */
-    public function stats(int $id): JsonResponse
+    public function stats(Request $request, int $id): JsonResponse
     {
+        if (! AccessScope::canAccessEmployee($request->user(), $id, 'employees.view_all')) {
+            return ApiResponse::forbidden('You are not authorized to view these stats.');
+        }
+
         $stats = $this->service->getStats($id);
         return ApiResponse::success($stats, 'Employee stats retrieved.');
     }

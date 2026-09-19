@@ -2,6 +2,7 @@
 
 namespace App\Models\SocialMedia;
 
+use App\Models\Concerns\Auditable;
 use App\Models\Company;
 use App\Models\Employee;
 use Illuminate\Database\Eloquent\Model;
@@ -13,6 +14,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class PhotoSession extends Model
 {
+    use Auditable;
+
     protected $table = 'sm_photo_sessions';
 
     protected $fillable = [

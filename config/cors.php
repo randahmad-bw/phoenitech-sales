@@ -14,7 +14,13 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => array_filter(array_map('trim', explode(',', env('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,https://sales.phoenitech.sy,*')))),
+    /*
+     | NOTE: never add '*' here. With 'supports_credentials' => true a wildcard
+     | origin is both invalid per the CORS spec and a security hole: it would let
+     | any site on the internet call this API with the signed-in user's credentials.
+     | Add real deployment origins to CORS_ALLOWED_ORIGINS instead.
+     */
+    'allowed_origins' => array_values(array_filter(array_map('trim', explode(',', env('CORS_ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,https://sales.phoenitech.sy'))), fn ($origin) => $origin !== '' && $origin !== '*')),
 
     'allowed_origins_patterns' => [],
 

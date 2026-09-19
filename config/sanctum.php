@@ -50,7 +50,9 @@ return [
     |
     */
 
-    'expiration' => null,
+    // Defaults to 7 days. A stolen token stops working on its own instead of
+    // granting access forever. Expired rows are cleaned by `sanctum:prune-expired`.
+    'expiration' => (int) env('SANCTUM_EXPIRATION', 60 * 24 * 7),
 
     /*
     |--------------------------------------------------------------------------

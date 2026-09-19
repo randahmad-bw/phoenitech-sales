@@ -262,7 +262,7 @@ export const SubscriptionsPage: React.FC = () => {
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const perPage = 25;
+  const [perPage, setPerPage] = useState(25);
 
   // ── CRUD States ──
   const { create, update, remove, renew } = useSubscriptionMutations();
@@ -317,7 +317,7 @@ export const SubscriptionsPage: React.FC = () => {
   const dashboardData = dashboardRes?.data?.data;
 
   const { data: listRes, isLoading: isListLoading, refetch: refetchList } = useQuery({
-    queryKey: ['subscriptions-list', { type: typeFilter, company_name: companyFilter, status: statusFilter, search, page }],
+    queryKey: ['subscriptions-list', { type: typeFilter, company_name: companyFilter, status: statusFilter, search, page, perPage }],
     queryFn: () =>
       subscriptionApi.list({
         type: typeFilter !== 'all' ? typeFilter : undefined,
@@ -346,6 +346,7 @@ export const SubscriptionsPage: React.FC = () => {
     setSearchInput('');
     setSearch('');
     setPage(1);
+    setPerPage(25);
   }, []);
 
   const openCreateForm = () => {
@@ -500,19 +501,10 @@ export const SubscriptionsPage: React.FC = () => {
       },
     },
     {
-      key: 'provider',
-      header: isAr ? 'المزود' : 'Provider',
-      render: (row: ServerSubscription) => (
-        <span className="text-xs text-text-muted font-medium">
-          {row.provider || '—'}
-        </span>
-      ),
-    },
-    {
       key: 'cost',
       header: isAr ? 'التكلفة' : 'Cost',
       render: (row: ServerSubscription) => (
-        <span className="font-semibold text-text text-sm">
+        <span className="font-semibold text-text text-sm whitespace-nowrap">
           {row.cost > 0 ? formatCurrency(row.cost, row.currency || 'USD') : '—'}
         </span>
       ),
@@ -521,12 +513,12 @@ export const SubscriptionsPage: React.FC = () => {
       key: 'end_date',
       header: isAr ? 'تاريخ الانتهاء' : 'End Date',
       render: (row: ServerSubscription) => (
-        <div className="flex flex-col gap-0.5">
+        <div className="flex flex-col gap-0.5 whitespace-nowrap">
           <span className="text-xs font-medium text-text">
             {formatDate(row.end_date)}
           </span>
           {row.start_date && (
-            <span className="text-[11px] text-text-muted">
+            <span className="text-[10px] text-text-muted">
               من {formatDate(row.start_date)}
             </span>
           )}
@@ -534,41 +526,40 @@ export const SubscriptionsPage: React.FC = () => {
       ),
     },
     {
-      key: 'days_remaining',
-      header: isAr ? 'المتبقي' : 'Remaining',
+      key: 'status',
+      header: isAr ? 'الحالة / المتبقي' : 'Status & Remaining',
       render: (row: ServerSubscription) => {
         const days = getDaysRemaining(row.end_date);
-        if (days === null) return <span className="text-text-muted text-xs">—</span>;
-
-        if (days < 0) {
+        if (row.status === 'cancelled') {
           return (
-            <span className="inline-flex items-center gap-1 text-xs font-bold text-danger-text bg-danger-bg px-2 py-0.5 rounded-full border border-danger-text/15">
-              <AlertTriangle size={11} />
-              {isAr ? `منتهي منذ ${Math.abs(days)} يوم` : `${Math.abs(days)}d expired`}
+            <span className="badge bg-danger-bg text-danger-text border-danger-text/15 whitespace-nowrap">
+              {isAr ? 'ملغي' : 'Cancelled'}
             </span>
           );
         }
-
-        if (days <= 30) {
+        if (days !== null && days < 0) {
           return (
-            <span className="inline-flex items-center gap-1 text-xs font-bold text-warning-text bg-warning-bg px-2 py-0.5 rounded-full border border-warning-text/15">
+            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-danger-text bg-danger-bg px-2 py-0.5 rounded-full border border-danger-text/15 whitespace-nowrap">
+              <AlertTriangle size={11} />
+              {isAr ? `منتهي (${Math.abs(days)} يوم)` : `Expired (${Math.abs(days)}d)`}
+            </span>
+          );
+        }
+        if (days !== null && days <= 30) {
+          return (
+            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-warning-text bg-warning-bg px-2 py-0.5 rounded-full border border-warning-text/15 whitespace-nowrap">
               <Clock size={11} />
               {isAr ? `${days} يوم متبقي` : `${days}d left`}
             </span>
           );
         }
-
         return (
-          <span className="inline-flex items-center gap-1 text-xs font-medium text-success-text bg-success-bg px-2 py-0.5 rounded-full border border-success-text/15">
-            {isAr ? `${days} يوم` : `${days}d`}
+          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-success-text bg-success-bg px-2 py-0.5 rounded-full border border-success-text/15 whitespace-nowrap">
+            <Check size={11} />
+            {isAr ? `نشط (${days} يوم)` : `Active (${days}d)`}
           </span>
         );
       },
-    },
-    {
-      key: 'status',
-      header: isAr ? 'الحالة' : 'Status',
-      render: (row: ServerSubscription) => <SubscriptionStatusBadge sub={row} isAr={isAr} />,
     },
     {
       key: 'actions',
@@ -771,30 +762,62 @@ export const SubscriptionsPage: React.FC = () => {
               columns={columns}
             />
 
-            {/* Pagination */}
-            {meta && meta.last_page > 1 && (
-              <div className="p-4 border-t border-border flex items-center justify-between text-xs text-text-muted">
-                <span>
-                  {isAr
-                    ? `عرض صفحة ${meta.current_page} من ${meta.last_page} (إجمالي ${meta.total})`
-                    : `Page ${meta.current_page} of ${meta.last_page} (total ${meta.total})`}
-                </span>
-                <div className="flex items-center gap-1.5">
-                  <button
-                    disabled={meta.current_page <= 1}
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    className="p-1.5 rounded-lg border border-border hover:bg-surface-lighter disabled:opacity-40 disabled:pointer-events-none"
+            {/* Pagination Controls */}
+            {meta && (
+              <div className="p-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-text-muted bg-surface/50">
+                <div className="flex items-center gap-2.5">
+                  <span className="font-medium text-text">{isAr ? 'عدد العناصر بالصفحة:' : 'Per page:'}</span>
+                  <select
+                    value={perPage}
+                    onChange={(e) => {
+                      setPerPage(Number(e.target.value));
+                      setPage(1);
+                    }}
+                    className="input h-8 w-20 py-0 px-2 text-xs font-semibold bg-surface border-border cursor-pointer"
                   >
-                    <ChevronRight size={16} />
-                  </button>
-                  <button
-                    disabled={meta.current_page >= meta.last_page}
-                    onClick={() => setPage((p) => p + 1)}
-                    className="p-1.5 rounded-lg border border-border hover:bg-surface-lighter disabled:opacity-40 disabled:pointer-events-none"
-                  >
-                    <ChevronLeft size={16} />
-                  </button>
+                    <option value={10}>10</option>
+                    <option value={15}>15</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                  </select>
+
+                  {meta.total > 0 && (
+                    <span className="ms-2 font-medium">
+                      {isAr
+                        ? `عرض ${(meta.current_page - 1) * meta.per_page + 1} إلى ${Math.min(meta.current_page * meta.per_page, meta.total)} من إجمالي ${meta.total}`
+                        : `Showing ${(meta.current_page - 1) * meta.per_page + 1} to ${Math.min(meta.current_page * meta.per_page, meta.total)} of ${meta.total}`}
+                    </span>
+                  )}
                 </div>
+
+                {meta.last_page > 1 && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      disabled={meta.current_page <= 1}
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border hover:bg-surface-lighter disabled:opacity-40 disabled:pointer-events-none text-text transition-colors"
+                    >
+                      {isAr ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+                      <span>{isAr ? 'السابق' : 'Previous'}</span>
+                    </button>
+
+                    <span className="font-semibold text-text px-2">
+                      {isAr
+                        ? `صفحة ${meta.current_page} من ${meta.last_page}`
+                        : `Page ${meta.current_page} of ${meta.last_page}`}
+                    </span>
+
+                    <button
+                      disabled={meta.current_page >= meta.last_page}
+                      onClick={() => setPage((p) => p + 1)}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border hover:bg-surface-lighter disabled:opacity-40 disabled:pointer-events-none text-text transition-colors"
+                    >
+                      <span>{isAr ? 'التالي' : 'Next'}</span>
+                      {isAr ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </>

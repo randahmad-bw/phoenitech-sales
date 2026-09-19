@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Traits\HasRoles;
 
 /**
  * User model for authentication and access control.
@@ -14,7 +16,21 @@ use Laravel\Sanctum\HasApiTokens;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable;
+    use Auditable, HasApiTokens, HasFactory, HasRoles, Notifiable;
+
+    /**
+     * Columns the audit trail ignores on this model.
+     *
+     * Login bookkeeping is written on every sign-in and would bury the trail in
+     * "updated" noise — the `login` event already records it, with the IP.
+     *
+     * @var list<string>
+     */
+    protected array $auditExclude = [
+        'last_login_at',
+        'last_login_ip',
+        'email_verified_at',
+    ];
 
     /**
      * The attributes that are mass assignable.
@@ -23,8 +39,11 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'username',
         'email',
         'password',
+        'is_active',
+        'must_change_password',
     ];
 
     /**
@@ -47,6 +66,9 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
+            'must_change_password' => 'boolean',
+            'last_login_at' => 'datetime',
         ];
     }
 

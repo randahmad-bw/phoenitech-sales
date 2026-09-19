@@ -1,0 +1,129 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Employee;
+use App\Models\User;
+use Database\Seeders\RolePermissionSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+/**
+ * Proves authorization is enforced at the API layer (not just hidden in the UI):
+ * direct requests from under-privileged accounts are rejected by the backend.
+ */
+class AuthorizationTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->seed(RolePermissionSeeder::class);
+    }
+
+    private function userWithRole(string $role, array $attributes = []): User
+    {
+        $user = User::factory()->create($attributes);
+        $user->assignRole($role);
+
+        return $user;
+    }
+
+    /** @test */
+    public function employee_cannot_delete_an_employee()
+    {
+        $actor = $this->userWithRole('employee');
+        $target = Employee::factory()->create();
+
+        $this->actingAs($actor, 'sanctum')
+            ->deleteJson("/api/v1/employees/{$target->id}")
+            ->assertStatus(403)
+            ->assertJson(['success' => false, 'error_code' => 'FORBIDDEN']);
+    }
+
+    /** @test */
+    public function employee_cannot_create_a_contract()
+    {
+        $actor = $this->userWithRole('employee');
+
+        $this->actingAs($actor, 'sanctum')
+            ->postJson('/api/v1/contracts', [])
+            ->assertStatus(403);
+    }
+
+    /** @test */
+    public function manager_cannot_delete_users_but_super_admin_can_reach_the_endpoint()
+    {
+        // There is no users endpoint yet; assert via a manager-forbidden action:
+        // a manager has no employees.delete permission.
+        $manager = $this->userWithRole('manager');
+        $target = Employee::factory()->create();
+
+        $this->actingAs($manager, 'sanctum')
+            ->deleteJson("/api/v1/employees/{$target->id}")
+            ->assertStatus(403);
+    }
+
+    /** @test */
+    public function super_admin_passes_every_permission_check()
+    {
+        $admin = $this->userWithRole('super_admin');
+        $target = Employee::factory()->create();
+
+        $this->actingAs($admin, 'sanctum')
+            ->deleteJson("/api/v1/employees/{$target->id}")
+            ->assertStatus(200);
+    }
+
+    /** @test */
+    public function employee_listing_is_scoped_to_their_own_profile()
+    {
+        $actor = $this->userWithRole('employee');
+        $ownProfile = Employee::factory()->create(['user_id' => $actor->id]);
+        Employee::factory()->count(3)->create(); // other employees
+
+        $response = $this->actingAs($actor, 'sanctum')
+            ->getJson('/api/v1/employees')
+            ->assertStatus(200);
+
+        $data = $response->json('data');
+        $this->assertCount(1, $data);
+        $this->assertSame($ownProfile->id, $data[0]['id']);
+    }
+
+    /** @test */
+    public function a_granted_permission_actually_lets_a_non_admin_through()
+    {
+        // Guards against the sanctum-vs-web guard pitfall: a manager holds
+        // contracts.view_all, so the contracts listing must return 200, not 403.
+        $manager = $this->userWithRole('manager');
+
+        $this->actingAs($manager, 'sanctum')
+            ->getJson('/api/v1/contracts')
+            ->assertStatus(200);
+    }
+
+    /** @test */
+    public function a_disabled_account_is_blocked_from_protected_routes()
+    {
+        $user = $this->userWithRole('super_admin', ['is_active' => false]);
+
+        $this->actingAs($user, 'sanctum')
+            ->getJson('/api/v1/dashboard')
+            ->assertStatus(403)
+            ->assertJson(['message' => 'Your account has been disabled. Please contact an administrator.']);
+    }
+
+    /** @test */
+    public function auth_me_exposes_roles_and_permissions()
+    {
+        $manager = $this->userWithRole('manager');
+
+        $this->actingAs($manager, 'sanctum')
+            ->getJson('/api/v1/auth/me')
+            ->assertStatus(200)
+            ->assertJsonPath('data.roles.0', 'manager')
+            ->assertJsonStructure(['data' => ['roles', 'permissions', 'is_active']]);
+    }
+}

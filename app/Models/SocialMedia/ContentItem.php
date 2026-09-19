@@ -2,6 +2,7 @@
 
 namespace App\Models\SocialMedia;
 
+use App\Models\Concerns\Auditable;
 use App\Models\Employee;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,6 +12,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class ContentItem extends Model
 {
+    use Auditable;
+
     protected $table = 'sm_content_items';
 
     protected $fillable = [

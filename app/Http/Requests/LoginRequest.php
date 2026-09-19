@@ -12,9 +12,12 @@ class LoginRequest extends BaseFormRequest
      */
     public function rules(): array
     {
+        // The field is still named "email" for frontend compatibility, but it
+        // accepts either an email address or a username — resolved in the
+        // controller — so it is validated as a plain string, not an email.
         return [
-            'email' => ['required', 'email', 'string'],
-            'password' => ['required', 'string', 'min:6'],
+            'email' => ['required', 'string'],
+            'password' => ['required', 'string'],
         ];
     }
 }
