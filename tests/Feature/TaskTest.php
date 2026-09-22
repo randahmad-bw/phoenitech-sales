@@ -192,6 +192,51 @@ class TaskTest extends TestCase
             ->assertJsonPath('data.total', 5);
     }
 
+    /** @test */
+    public function the_waiting_strip_lists_only_the_callers_own_untouched_work()
+    {
+        Task::factory()->overdue()->create(['assigned_to' => $this->workerEmployee->id, 'title' => 'Late and untouched']);
+        Task::factory()->create(['assigned_to' => $this->workerEmployee->id, 'title' => 'Waiting']);
+        Task::factory()->create(['assigned_to' => $this->workerEmployee->id, 'title' => 'Already running', 'status' => Task::STATUS_IN_PROGRESS]);
+        Task::factory()->done()->create(['assigned_to' => $this->workerEmployee->id, 'title' => 'Finished']);
+        Task::factory()->count(3)->create(['assigned_to' => $this->otherEmployee->id]);
+
+        $this->asWorker()->getJson('/api/v1/tasks/pending')
+            ->assertOk()
+            ->assertJsonPath('data.count', 2)
+            ->assertJsonCount(2, 'data.tasks')
+            // Most pressing first, the same order the board is read in.
+            ->assertJsonPath('data.tasks.0.title', 'Late and untouched')
+            ->assertJsonPath('data.tasks.1.title', 'Waiting');
+    }
+
+    /** @test */
+    public function the_waiting_strip_is_the_callers_own_even_for_a_manager()
+    {
+        $managerEmployee = Employee::factory()->create(['user_id' => $this->manager->id]);
+
+        Task::factory()->create(['assigned_to' => $managerEmployee->id, 'title' => 'Mine']);
+        Task::factory()->count(4)->create(['assigned_to' => $this->workerEmployee->id]);
+
+        // `tasks.view_all` widens the board, never the badge: a manager cannot
+        // start somebody else's task, so it must not count towards theirs.
+        $this->asManager()->getJson('/api/v1/tasks/pending')
+            ->assertOk()
+            ->assertJsonPath('data.count', 1)
+            ->assertJsonPath('data.tasks.0.title', 'Mine');
+    }
+
+    /** @test */
+    public function an_account_with_no_employee_profile_has_nothing_waiting()
+    {
+        Task::factory()->count(2)->create(['assigned_to' => $this->workerEmployee->id]);
+
+        $this->asManager()->getJson('/api/v1/tasks/pending')
+            ->assertOk()
+            ->assertJsonPath('data.count', 0)
+            ->assertJsonCount(0, 'data.tasks');
+    }
+
     // ─── Moving ───
 
     /** @test */

@@ -135,6 +135,26 @@ class TaskController extends Controller
         return ApiResponse::created(new TaskCommentResource($comment), 'Comment added successfully.');
     }
 
+    /**
+     * GET tasks/pending — the caller's own work that has not been started.
+     *
+     * Always the caller's, never a board, whatever they may view: this is what
+     * the sidebar badge counts and what the landing screen shows before the
+     * day starts, and both of those say "you have something waiting".
+     */
+    public function pending(Request $request): JsonResponse
+    {
+        $pending = $this->service->notStartedFor($request->user());
+
+        return ApiResponse::success(
+            [
+                'count' => $pending['count'],
+                'tasks' => TaskResource::collection($pending['tasks']),
+            ],
+            'Pending tasks retrieved successfully.'
+        );
+    }
+
     // ─── The lines inside a task ─────────────────────────
 
     /**

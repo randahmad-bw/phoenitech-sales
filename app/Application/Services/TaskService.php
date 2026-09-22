@@ -54,13 +54,11 @@ class TaskService
      */
     public function list(array $filters = [], ?int $restrictToEmployeeId = null): LengthAwarePaginator
     {
-        return $this->query($filters, $restrictToEmployeeId)
-            ->with(['assignee', 'creator', 'company'])
-            ->withCount($this->progressCounts())
-            ->orderByRaw($this->pressureOrdering())
-            ->orderByRaw("CASE priority WHEN 'urgent' THEN 0 WHEN 'high' THEN 1 WHEN 'normal' THEN 2 ELSE 3 END")
-            ->orderByDesc('id')
-            ->paginate((int) ($filters['per_page'] ?? 25));
+        return $this->mostPressingFirst(
+            $this->query($filters, $restrictToEmployeeId)
+                ->with(['assignee', 'creator', 'company'])
+                ->withCount($this->progressCounts())
+        )->paginate((int) ($filters['per_page'] ?? 25));
     }
 
     /**
@@ -481,15 +479,12 @@ class TaskService
 
         $scope = AccessScope::ownEmployeeId($user, 'tasks.view_all');
 
-        $focus = $this->query([], $scope)
-            ->open()
-            ->with(['assignee', 'company'])
-            ->withCount($this->progressCounts())
-            ->orderByRaw($this->pressureOrdering())
-            ->orderByRaw("CASE priority WHEN 'urgent' THEN 0 WHEN 'high' THEN 1 WHEN 'normal' THEN 2 ELSE 3 END")
-            ->orderByDesc('id')
-            ->limit($limit)
-            ->get();
+        $focus = $this->mostPressingFirst(
+            $this->query([], $scope)
+                ->open()
+                ->with(['assignee', 'company'])
+                ->withCount($this->progressCounts())
+        )->limit($limit)->get();
 
         return [
             // Which board this is — the company's or the reader's own. The
@@ -498,6 +493,43 @@ class TaskService
             'scope' => $scope === null ? 'all' : 'own',
             'summary' => $this->summary([], $scope),
             'focus' => $focus,
+        ];
+    }
+
+    /**
+     * Work sitting on one person's plate that nobody has picked up yet.
+     *
+     * Always the caller's own, never a board — even for a manager holding
+     * `tasks.view_all`. This feeds a badge and a strip that say *you have
+     * something waiting*, and a manager cannot start somebody else's task, so
+     * counting the company's untouched work there would be a red dot they can
+     * never clear.
+     *
+     * Count and list in one answer because both readers are on screen at the
+     * same moment: the sidebar wants the number, the landing strip wants the
+     * first few titles, and two endpoints would poll twice for one fact.
+     *
+     * @return array{count: int, tasks: Collection<int, Task>}
+     */
+    public function notStartedFor(?User $user, int $limit = 5): array
+    {
+        $employeeId = $user?->employee?->id;
+
+        // Not an error. An account with no employee profile is nobody's
+        // assignee, so it has nothing waiting — the badge simply never shows.
+        if ($employeeId === null) {
+            return ['count' => 0, 'tasks' => new Collection];
+        }
+
+        $base = fn (): Builder => Task::query()
+            ->where('assigned_to', $employeeId)
+            ->where('status', Task::STATUS_TODO);
+
+        return [
+            'count' => $base()->count(),
+            'tasks' => $this->mostPressingFirst(
+                $base()->with('company')->withCount($this->progressCounts())
+            )->limit($limit)->get(),
         ];
     }
 
@@ -687,6 +719,25 @@ class TaskService
 
                 return $q->where(fn ($inner) => $inner->where('title', 'like', $like)->orWhere('description', 'like', $like));
             });
+    }
+
+    /**
+     * The order every task list is read in: pressure, then priority.
+     *
+     * One helper rather than the three calls repeated per query — the listing,
+     * the dashboard digest and the waiting strip all have to agree on what
+     * "most pressing" means, and three copies of an ordering is how they stop
+     * agreeing.
+     *
+     * @param  Builder<Task>  $query
+     * @return Builder<Task>
+     */
+    private function mostPressingFirst(Builder $query): Builder
+    {
+        return $query
+            ->orderByRaw($this->pressureOrdering())
+            ->orderByRaw("CASE priority WHEN 'urgent' THEN 0 WHEN 'high' THEN 1 WHEN 'normal' THEN 2 ELSE 3 END")
+            ->orderByDesc('id');
     }
 
     /**

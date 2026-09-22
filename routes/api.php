@@ -365,6 +365,11 @@ Route::middleware(['auth:sanctum', 'active'])->group(function () {
     // `summary` it sits above `{task}` so the word is not read as an id.
     Route::get('tasks/checklist', [TaskController::class, 'checklist'])
         ->middleware('permission:tasks.view_all|tasks.view_own')->name('tasks.checklist');
+    // The caller's own not-started tasks — the sidebar badge and the strip the
+    // landing screen shows before the day begins. Always "mine" for the same
+    // reason `checklist` is, and above `{task}` for the same reason `summary` is.
+    Route::get('tasks/pending', [TaskController::class, 'pending'])
+        ->middleware('permission:tasks.view_all|tasks.view_own')->name('tasks.pending');
     Route::post('tasks', [TaskController::class, 'store'])
         ->middleware('permission:tasks.create')->name('tasks.store');
     Route::get('tasks/{task}', [TaskController::class, 'show'])

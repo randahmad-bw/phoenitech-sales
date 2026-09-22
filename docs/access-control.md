@@ -1917,12 +1917,13 @@ reassign the company's work to themselves. The split is what avoids both.
 | `POST tasks/{task}/comments` | `tasks.view_all\|tasks.view_own` | anyone who may see the task |
 | `DELETE tasks/{task}` | `tasks.delete` | `general_manager` and above |
 | `GET tasks/checklist` | `tasks.view_all\|tasks.view_own` | always the caller's own lines — see §39 |
+| `GET tasks/pending` | `tasks.view_all\|tasks.view_own` | always the caller's own untouched tasks — see §40 |
 | `POST tasks/{task}/items` | `tasks.view_all\|tasks.view_own` | the assignee, or management |
 | `PATCH tasks/{task}/items/{item}` | `tasks.view_all\|tasks.view_own` | the assignee, or management |
 | `DELETE tasks/{task}/items/{item}` | `tasks.view_all\|tasks.view_own` | + the line must be one the caller wrote |
 
-`tasks/summary` and `tasks/checklist` are both declared **before**
-`tasks/{task}` — otherwise the word is read as an id and they 404.
+`tasks/summary`, `tasks/checklist` and `tasks/pending` are all declared
+**before** `tasks/{task}` — otherwise the word is read as an id and they 404.
 
 **No new permission.** The checklist is four endpoints and zero additions to the
 catalog, which is the point: ticking off a step of the work you were asked for is
@@ -2356,3 +2357,88 @@ Frontend/src/hooks/queries.ts                     (useTaskChecklist, useTaskItem
 A task can also be **created with its lines** in one request — `POST tasks` takes
 `items: string[]`, blanks dropped. A manager who has to save the task and reopen
 it to list what is in it will not list what is in it.
+
+---
+
+## 40. Work that has not been started has to find the person
+
+A task assigned at nine in the evening was, until now, read by whoever happened
+to open the tasks screen — which is nobody. The bell announced it once and the
+notice was then marked read, so the *fact* that something was waiting survived
+only in a list somebody had to go and look at.
+
+Three places now carry it, all fed by one endpoint.
+
+### 40.1 `GET tasks/pending` — always "mine", never the board
+
+```
+GET tasks/pending    permission:tasks.view_all|tasks.view_own
+→ { count: int, tasks: TaskResource[] }   // the caller's own status = todo
+```
+
+`TaskService::notStartedFor()` resolves the employee from the caller
+(`$user->employee?->id`) and **does not consult `AccessScope`**. This is the
+same rule `tasks/checklist` follows (§39.4) and for the same reason: a manager
+holding `tasks.view_all` cannot start somebody else's task, so counting the
+company's untouched work on their badge would be a red dot they can never
+clear. The permission on the route is only the door — it never widens the rows.
+
+An account with no employee profile gets `{count: 0, tasks: []}`, not an error:
+it is nobody's assignee, so nothing is waiting on it.
+
+The count and the first few rows come back together because both readers are on
+screen at the same moment — the sidebar wants the number, the landing strip
+wants the titles — and two endpoints would poll twice for one fact. `tasks` is
+capped at 5 and ordered the way every task list in this system is ordered
+(`mostPressingFirst()`: overdue, then nearest due date, then priority).
+
+### 40.2 Where it shows
+
+| Surface | What it shows | Seen by |
+|---|---|---|
+| Sidebar, on **المهام** | the count, as the same red badge the leave entry uses (a plain dot on the collapsed rail) | anyone with a task permission |
+| `/attendance`, above the check-in button | `<PendingTasksNotice>` — the count, the first 3 titles with priority and due date, "+N أخرى" | `team`, `marketing`, `sales` — everyone who starts their day there |
+| `/` dashboard | **nothing** — the digest is untouched; see below | — |
+
+The strip sits above the check-in card deliberately: the one moment everybody
+reliably looks at this system is before they press **تسجيل دخول**, and `team`
+and `marketing` have no dashboard to put it on (§19). It renders **nothing**
+when nothing is waiting, so an ordinary morning still opens on the button.
+
+**The dashboard carries none of this, by decision.** Three attempts to put it
+there were each undone at the owner's request:
+
+1. lifting `<TaskDigest>` above the KPI rows — they want figures, digest, team,
+   in that order;
+2. splitting the screen into **المهام** / **الإحصائيات** tabs;
+3. a fifth **لم تبدأ** counter in the digest — which forced the counter row
+   from `sm:grid-cols-4` to `sm:grid-cols-3 lg:grid-cols-5`, and so made the
+   tiles visibly wider between 640px and 1024px. They noticed.
+
+`<TaskDigest>` and `DashboardPage.tsx` are now **byte-for-byte what they were**
+before this section's work. The lesson is in the third one: a tile added to a
+fixed-column row is never only a tile — it is a re-flow of everything beside
+it. The signal lives in the sidebar and on the attendance screen, which is
+where it was asked for.
+
+### 40.3 Key files
+
+```
+app/Application/Services/TaskService.php     (notStartedFor, mostPressingFirst)
+app/Http/Controllers/Api/V1/TaskController.php  (pending)
+routes/api.php                               (tasks/pending, above tasks/{task})
+tests/Feature/TaskTest.php                   (3 tests: own only, own even for a
+                                              manager, no employee profile)
+Frontend/src/components/tasks/PendingTasksNotice.tsx   (new)
+Frontend/src/components/tasks/TaskBadges.tsx  (TaskDueLabel, lifted out of TaskDigest)
+Frontend/src/components/tasks/TaskDigest.tsx  (the "لم تبدأ" counter)
+Frontend/src/components/layout/Sidebar.tsx    (NavItem.badgeHint — a badge now
+                                               says what it counts)
+Frontend/src/pages/AttendancePage.tsx          (the strip, above the check-in card)
+Frontend/src/hooks/queries.ts                 (useMyPendingTasks — 60s poll,
+                                               invalidated by every task write)
+Frontend/src/api/tasks.ts · types/tasks.ts    (pending(), PendingTasks)
+```
+
+The badge clears the way the fact does: by starting the task. Nothing marks it
+read, because it is not a notice — it is the state of the work.
