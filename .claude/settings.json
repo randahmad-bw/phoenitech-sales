@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Bash",
+      "PowerShell",
+      "Read",
+      "Edit",
+      "Write",
+      "MultiEdit",
+      "NotebookEdit",
+      "Glob",
+      "Grep",
+      "WebFetch",
+      "WebSearch",
+      "TodoWrite",
+      "Task",
+      "Agent",
+      "BashOutput",
+      "KillShell",
+      "Monitor",
+      "SlashCommand",
+      "Skill",
+      "ExitPlanMode",
+      "EnterPlanMode",
+      "EnterWorktree",
+      "ExitWorktree",
+      "Artifact",
+      "ArtifactData",
+      "ArtifactComments",
+      "CronCreate",
+      "CronList",
+      "CronDelete",
+      "SendMessage",
+      "ListAgents",
+      "TaskStop",
+      "PushNotification",
+      "mcp__claude_ai_Claude_Docs",
+      "mcp__claude_ai_Gmail",
+      "mcp__claude_ai_Google_Calendar",
+      "mcp__claude_ai_Google_Drive"
+    ],
+    "deny": [
+      "Edit(./vendor/**)",
+      "Edit(./vendor.zip)",
+      "Edit(./Frontend/node_modules/**)",
+      "Edit(./.phpunit.result.cache)"
+    ],
+    "ask": [],
+    "additionalDirectories": [
+      "D:/Work",
+      "C:/Users/randa"
+    ]
+  },
+  "skipDangerousModePermissionPrompt": true,
+  "skipAutoPermissionPrompt": true,
+  "enableAllProjectMcpServers": true,
+  "autoCompactEnabled": true,
+  "fileCheckpointingEnabled": true,
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .claude/session-context.ps1",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}

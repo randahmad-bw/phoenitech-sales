@@ -1,0 +1,213 @@
+<?php
+
+namespace App\Models;
+
+use App\Models\Concerns\Auditable;
+use App\Models\SocialMedia\ContentPlan;
+use App\Models\SocialMedia\SmPackage;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+
+/**
+ * Contract model — core business entity linking company, employee, and service.
+ * Provides computed accessors for financial totals.
+ */
+class Contract extends Model
+{
+    use Auditable, HasFactory;
+
+    protected $fillable = [
+        'parent_contract_id',
+        'contract_number',
+        'company_id',
+        'employee_id',
+        'service_id',
+        'contract_value',
+        'currency',
+        'exchange_rate',
+        'start_date',
+        'end_date',
+        'status',
+        'progress_percentage',
+        'category',
+        'category_custom',
+        'product',
+        'notes',
+    ];
+
+    /**
+     * Attribute type casting definitions.
+     */
+    protected function casts(): array
+    {
+        return [
+            'contract_value' => 'decimal:2',
+            'exchange_rate' => 'float',
+            'start_date' => 'date',
+            'end_date' => 'date',
+            'progress_percentage' => 'integer',
+        ];
+    }
+
+    /**
+     * The company this contract belongs to.
+     */
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
+    }
+
+    /**
+     * The employee assigned to this contract.
+     */
+    public function employee(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class);
+    }
+
+    /**
+     * The parent contract if this is a renewal.
+     */
+    public function parentContract(): BelongsTo
+    {
+        return $this->belongsTo(Contract::class, 'parent_contract_id');
+    }
+
+    /**
+     * The renewal contracts that were generated from this contract.
+     */
+    public function renewals(): HasMany
+    {
+        return $this->hasMany(Contract::class, 'parent_contract_id');
+    }
+
+    /**
+     * Change history entries for this contract.
+     */
+    public function histories(): HasMany
+    {
+        return $this->hasMany(ContractHistory::class)->orderByDesc('created_at');
+    }
+
+    /**
+     * Get the root parent contract ID (follows the chain up to the origin).
+     * If this IS the root, returns its own id.
+     */
+    public function getRootParentId(): int
+    {
+        return $this->parent_contract_id ?? $this->id;
+    }
+
+    /**
+     * Get the count of previous/other contracts in the same renewal chain.
+     */
+    public function getPreviousContractsCountAttribute(): int
+    {
+        $rootId = $this->getRootParentId();
+
+        return static::where(function ($q) use ($rootId) {
+            $q->where('id', $rootId)->orWhere('parent_contract_id', $rootId);
+        })->where('id', '!=', $this->id)->count();
+    }
+
+    /**
+     * The service type of this contract.
+     */
+    public function service(): BelongsTo
+    {
+        return $this->belongsTo(Service::class);
+    }
+
+    /**
+     * Payment records for this contract.
+     */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    /**
+     * File attachments for this contract (polymorphic).
+     */
+    public function attachments(): MorphMany
+    {
+        return $this->morphMany(Attachment::class, 'attachable');
+    }
+
+    /**
+     * Social media package (monthly quotas) for this contract.
+     */
+    public function smPackage(): HasOne
+    {
+        return $this->hasOne(SmPackage::class);
+    }
+
+    /**
+     * Monthly content plans for this contract.
+     */
+    public function contentPlans(): HasMany
+    {
+        return $this->hasMany(ContentPlan::class);
+    }
+
+    /**
+     * Calculate total paid amount from confirmed payments.
+     */
+    public function getTotalPaidAttribute(): float
+    {
+        return (float) $this->payments()->where('status', 'paid')->sum('amount');
+    }
+
+    /**
+     * Calculate remaining amount to be collected.
+     */
+    public function getRemainingAmountAttribute(): float
+    {
+        return (float) $this->contract_value - $this->total_paid;
+    }
+
+    /**
+     * Calculate collection percentage (0-100).
+     */
+    public function getCollectionPercentageAttribute(): float
+    {
+        if ((float) $this->contract_value <= 0) {
+            return 0;
+        }
+
+        return round(($this->total_paid / (float) $this->contract_value) * 100, 2);
+    }
+
+    // ─── Subscription Scopes ─────────────────────────────────────
+
+    /**
+     * Scope to contracts that have an end_date (i.e. are subscriptions).
+     */
+    public function scopeSubscriptions(Builder $query): Builder
+    {
+        return $query->whereNotNull('end_date');
+    }
+
+    /**
+     * Scope to contracts expiring within the given number of days.
+     */
+    public function scopeExpiringSoon(Builder $query, int $days = 30): Builder
+    {
+        return $query->where('status', 'active')
+            ->whereNotNull('end_date')
+            ->whereBetween('end_date', [now()->toDateString(), now()->addDays($days)->toDateString()]);
+    }
+
+    /**
+     * Scope to filter by product/brand.
+     */
+    public function scopeByProduct(Builder $query, string $product): Builder
+    {
+        return $query->where('product', $product);
+    }
+}
