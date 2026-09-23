@@ -1,4 +1,4 @@
-# CLAUDE.md — PhoeniTech Management (نظام الإدارة العامة)
+er# CLAUDE.md — PhoeniTech Management (نظام الإدارة العامة)
 
 > Project memory. Loaded automatically at the start of **every** session.
 > Rules here are binding. If a rule conflicts with a generic default, this file wins.

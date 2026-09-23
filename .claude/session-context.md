@@ -1,4 +1,4 @@
-## MANDATORY PROJECT RULES — PhoeniTech Management (نظام الإدارة العامة)
+er## MANDATORY PROJECT RULES — PhoeniTech Management (نظام الإدارة العامة)
 
 You are working in a Laravel 12 (PHP 8.2) API + React 19 SPA monorepo-ish project.
 
